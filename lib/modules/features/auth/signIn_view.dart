@@ -32,24 +32,18 @@ class _SignInViewState extends State<SignInView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 20.h),
-               CustomText(
-                text: 
-                "Hello There!",
-              
-                  fontSize: 30.sp,
-                  color: AppColors.greyColor,
-                  fontWeight: FontWeight.w400,
-              
+              CustomText(
+                text: "Hello There!",
+                fontSize: 30.sp,
+                color: AppColors.greyColor,
+                fontWeight: FontWeight.w400,
               ),
               SizedBox(height: 8.h),
               CustomText(
-                text: 
-                "Sign in to continue",
-              
-                  fontSize: 16.sp,
-                  color: AppColors.greyColor,
-                  fontWeight: FontWeight.w400,
-              
+                text: "Sign in to continue",
+                fontSize: 16.sp,
+                color: AppColors.greyColor,
+                fontWeight: FontWeight.w400,
               ),
               CustomTextFormField(
                 controller: signInController.emailController,
@@ -88,27 +82,21 @@ class _SignInViewState extends State<SignInView> {
                       children: [
                         CustomCheckbox(
                           value: signInController.rememberMe.value,
-                          onChanged: (val) => signInController.rememberMe.value = val ?? false,
+                          onChanged: (val) =>
+                              signInController.rememberMe.value = val ?? false,
                           activeColor: AppColors.primaryColor,
                         ),
-                        CustomText(
-                          text: 
-                          "Remember Me",
-                        fontSize: 14.sp
-                        ),
+                        CustomText(text: "Remember Me", fontSize: 14.sp),
                       ],
                     );
                   }),
                   GestureDetector(
                     onTap: () => Get.to(ForgotPassword()),
                     child: CustomText(
-                      text: 
-                      "Forgot Password?",
-                 
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.primaryColor,
-                      
+                      text: "Forgot Password?",
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primaryColor,
                     ),
                   ),
                 ],
@@ -124,11 +112,10 @@ class _SignInViewState extends State<SignInView> {
                   Expanded(child: Divider(color: AppColors.greyColor)),
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 8.w),
-                    child:CustomText(
-                      text: 
-                      "or continue with",
-                      fontSize: 14.sp, color: AppColors.greyColor),
-                    
+                    child: CustomText(
+                        text: "or continue with",
+                        fontSize: 14.sp,
+                        color: AppColors.greyColor),
                   ),
                   Expanded(child: Divider(color: AppColors.greyColor)),
                 ],
@@ -147,7 +134,8 @@ class _SignInViewState extends State<SignInView> {
                 child: RichText(
                   text: TextSpan(
                     text: "Don't have an account? ",
-                    style: TextStyle(fontSize: 14.sp, color: AppColors.greyColor),
+                    style:
+                        TextStyle(fontSize: 14.sp, color: AppColors.greyColor),
                     children: [
                       TextSpan(
                         text: "Sign Up",
@@ -170,7 +158,6 @@ class _SignInViewState extends State<SignInView> {
     );
   }
 }
-
 
 class SocialIconButton extends StatelessWidget {
   final String assetPath;

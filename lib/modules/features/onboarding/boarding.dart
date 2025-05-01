@@ -1,11 +1,11 @@
-
+import 'package:flutter_svg/svg.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'package:textomize/core/assets.dart';
 import 'package:textomize/core/exports.dart';
 import 'package:textomize/modules/features/auth/signIn_view.dart';
 
-
 class Boarding extends StatefulWidget {
-  const Boarding({super.key});
+  const Boarding({Key? key}) : super(key: key);
 
   @override
   State<Boarding> createState() => _BoardingState();
@@ -13,186 +13,191 @@ class Boarding extends StatefulWidget {
 
 class _BoardingState extends State<Boarding> {
   final PageController _controller = PageController();
-  final List<OnboardItem> _pages = [
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Scan Anything, Anytime',
-      subtitle:
-          'Our advanced OCR technology lets you scan and extract text from documents, images, and more, instantly and accurately.',
-    ),
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Your Documents, Digitized',
-      subtitle:
-          'Transform physical documents into editable, searchable digital files with just a snap of your camera.',
-    ),
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Speed and Accuracy Combined',
-      subtitle:
-          'Our OCR technology processes text quickly and accurately, saving you time while ensuring precision.',
-    ),
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Scan Multiple Languages',
-      subtitle:
-          'Whether it’s English, Spanish, Arabic, or more, our OCR system can recognize and process text in a variety of languages.',
-    ),
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Intelligent Text Extraction',
-      subtitle:
-          'Automatically extract relevant information, like dates, addresses, and names, from your scanned documents.',
-    ),
-  ];
+  bool onLastPage = false;
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        DateTime? lastPressed;
-        if (lastPressed == null || DateTime.now().difference(lastPressed) > const Duration(seconds: 2)) {
-          lastPressed = DateTime.now();
-          Get.snackbar(
-            'Exit',
-            'Press back again to exit',
-            snackPosition: SnackPosition.BOTTOM,
-            backgroundColor: Colors.black54,
-            colorText: Colors.white,
-            margin: const EdgeInsets.symmetric(vertical: 20),
-            snackStyle: SnackStyle.FLOATING,
-          );
-          return false;
-        }
-        return true;
-      },
-      child: Scaffold(
-        body: Stack(
+    return Scaffold(
+      backgroundColor: AppColors.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Column(
           children: [
-            PageView.builder(
-              controller: _controller,
-              itemCount: _pages.length,
-              itemBuilder: (context, index) {
-                return OnboardPage(item: _pages[index]);
-              },
-            ),
-
-            /// 🔹 Skip
-            Positioned(
-              top: 40,
-              right: 24,
-              child: GestureDetector(
-                onTap: () {
-                  _controller.jumpToPage(_pages.length - 1);
-                },
-                child: InkWell(
-                  onTap: () {
-                    Get.to(() => SignInView());
-                  },
-                  child: CustomText(
-                    text: "Skip",
-                    color: Colors.white,
-                    fontSize: 12.sp,
-                    fontWeight: FontWeight.w600,
+            /// Scanner-themed Header
+            Padding(
+              padding: const EdgeInsets.only(top: 20, right: 20),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.close, color: Colors.grey.shade600),
+                    onPressed: () => Get.to(() => SignInView()),
                   ),
-                ),
+                  SizedBox(
+                    height: 40,
+                    child: Image.asset(Assets.splashLogo),
+                  ),
+                ],
               ),
             ),
 
-            /// 🔹 Page Indicator
-            Positioned(
-              bottom: 30,
-              left: 24,
-              child: SmoothPageIndicator(
+            /// PageView with Scanner Features
+            Expanded(
+              child: PageView(
                 controller: _controller,
-                count: _pages.length,
-                effect: ExpandingDotsEffect(
-                  activeDotColor: Colors.white,
-                  dotColor: Colors.white30,
-                  dotHeight: 10,
-                  dotWidth: 18,
-                  spacing: 8,
-                ),
+                onPageChanged: (index) {
+                  setState(() => onLastPage = (index == 2));
+                },
+                children: [
+                  _buildScannerPage(
+                      image: 'assets/svg/page1.svg',
+                      title: 'Scan Any Document',
+                      subtitle:
+                          'Capture receipts, notes, or documents with perfect clarity using our advanced scanner'),
+                  _buildScannerPage(
+                      image: 'assets/svg/page2.svg',
+                      title: 'Smart Text Recognition',
+                      subtitle:
+                          'Extract text from images instantly with our powerful OCR technology'),
+                  _buildScannerPage(
+                      image: 'assets/svg/page3.svg',
+                      title: 'Organize Digitally',
+                      subtitle:
+                          'Save, search and manage all your scanned documents in one secure place'),
+                ],
               ),
             ),
+
+            /// Scanner-style Page Indicator
+            SmoothPageIndicator(
+              controller: _controller,
+              count: 3,
+              effect: ScrollingDotsEffect(
+                activeDotColor: AppColors.primaryColor,
+                dotColor: Colors.grey.shade300,
+                dotHeight: 8,
+                dotWidth: 8,
+                spacing: 10,
+                activeDotScale: 1.5,
+              ),
+            ),
+
+            const SizedBox(height: 30),
+
+            /// Scanner-themed Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Skip button on first pages
+                  if (!onLastPage)
+                    TextButton(
+                      onPressed: () => Get.to(() => SignInView()),
+                      child: Text(
+                        'Skip',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )
+                  else
+                    const SizedBox(width: 80), // Placeholder for alignment
+
+                  // Main action button
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      if (onLastPage) {
+                        Get.to(() => SignInView());
+                      } else {
+                        _controller.nextPage(
+                          duration: const Duration(milliseconds: 500),
+                          curve: Curves.easeInOut,
+                        );
+                      }
+                    },
+                    icon:
+                        Icon(onLastPage ? Icons.scanner : Icons.arrow_forward),
+                    label: Text(onLastPage ? "Start Scanning" : '  Next   '),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryColor,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24.0,
+                        vertical: 12.0,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.0),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
-}
 
-
-class OnboardItem {
-  final String image;
-  final String title;
-  final String subtitle;
-
-  OnboardItem({
-    required this.image,
-    required this.title,
-    required this.subtitle,
-  });
-}
-
-class OnboardPage extends StatelessWidget {
-  final OnboardItem item;
-
-  const OnboardPage({super.key, required this.item});
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        /// 🔹 Background Image
-        Image.asset(
-          item.image,
-          fit: BoxFit.cover,
-        ),
-
-        /// 🔹 Gradient Overlay
-        Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.center,
-              end: Alignment.bottomCenter,
-              colors: [
-                Colors.transparent,
-                Colors.black.withOpacity(0.7),
+  /// Scanner Feature Page Builder
+  Widget _buildScannerPage({
+    required String image,
+    required String title,
+    required String subtitle,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Scanner animation placeholder
+          Container(
+            height: 250,
+            margin: const EdgeInsets.only(bottom: 30),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryColor.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 2,
+                )
               ],
             ),
+            child: SvgPicture.asset(
+              image,
+              fit: BoxFit.contain,
+            ),
           ),
-        ),
 
-        /// 🔹 Text Content
-        Positioned(
-          bottom: 80,
-          left: 24,
-          right: 24,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                item.title,
-                style: TextStyle(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                item.subtitle,
-                style: TextStyle(
-                  fontSize: 14.sp,
-                  color: Colors.white70,
-                ),
-              ),
-            ],
+          // Scanner feature title
+          CustomText(
+            text: title,
+            fontSize: 24,
+            fontWeight: FontWeight.w700,
+            color: Colors.black87,
+            textAlign: TextAlign.center,
           ),
-        ),
-      ],
+
+          const SizedBox(height: 16),
+
+          // Feature description
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+                height: 1.5,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
