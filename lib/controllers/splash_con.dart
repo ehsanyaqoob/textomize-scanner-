@@ -30,6 +30,11 @@ class SplashController extends GetxController with GetSingleTickerProviderStateM
     super.onClose();
   }
 
+  void startAnimationAndNavigation() async {
+    await Future.delayed(const Duration(seconds: 1));
+    showLogo.value = true;
+  }
+
   void startAnimation() async {
     // Start the background scanner lines animation
     _animationController.repeat();
