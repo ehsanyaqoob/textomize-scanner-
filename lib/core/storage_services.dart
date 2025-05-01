@@ -3,7 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StorageService {
   static late SharedPreferences _prefs;
 
-  // Initialize SharedPreferences
+  // -------------------- INIT --------------------
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
   }
@@ -13,18 +13,30 @@ class StorageService {
     await _prefs.setBool('onboarding_seen', seen);
   }
 
-  static bool hasSeenOnboarding() {
+  static Future<bool> hasSeenOnboarding() async {
     return _prefs.getBool('onboarding_seen') ?? false;
   }
 
   // -------------------- Login / Signup --------------------
- static Future<void> setLoggedIn(bool value) async {
-  await _prefs.setBool('is_logged_in', value);
-}
+  static Future<void> setLoggedIn(bool value) async {
+    await _prefs.setBool('is_logged_in', value);
+  }
 
-static bool isLoggedIn() {
-  return _prefs.getBool('is_logged_in') ?? false;  // Default to false if not set
-}
+  static Future<bool> isLoggedIn() async {
+    return _prefs.getBool('is_logged_in') ?? false;
+  }
+
+  static Future<void> saveUserProfileImagePath(String path) async {
+    await _prefs.setString('user_profile_image_path', path);
+  }
+
+  static String? getUserProfileImagePath() {
+    return _prefs.getString('user_profile_image_path');
+  }
+
+  static Future<void> removeUserProfileImagePath() async {
+    await _prefs.remove('user_profile_image_path');
+  }
 
   static Future<void> saveUserToken(String token) async {
     await _prefs.setString('user_token', token);
@@ -50,20 +62,23 @@ static bool isLoggedIn() {
     return _prefs.getString('user_email');
   }
 
-  static Future<void> savePhoneNumber(String phone) async {
-    await _prefs.setString('user_phone', phone);
-  }
-
-  static String? getPhoneNumber() {
-    return _prefs.getString('user_phone');
-  }
-
   static Future<void> saveUserId(String id) async {
     await _prefs.setString('user_id', id);
   }
 
   static String? getUserId() {
     return _prefs.getString('user_id');
+  }
+
+  // -------------------- Clear Session (Logout) --------------------
+  static Future<void> clearSession() async {
+    await _prefs.remove('is_logged_in');
+    await _prefs.remove('user_token');
+    await _prefs.remove('user_name');
+    await _prefs.remove('user_email');
+    await _prefs.remove('user_profile_image_path');
+    await _prefs.remove('user_id');
+    // (Onboarding ka data nahi delete kar rahe)
   }
 
   // -------------------- Generic Set/Get --------------------
@@ -101,6 +116,6 @@ static bool isLoggedIn() {
 
   // -------------------- Logout / Clear All --------------------
   static Future<void> logOut() async {
-    await _prefs.clear(); // Clear all preferences on logout
+    await _prefs.clear();
   }
 }
