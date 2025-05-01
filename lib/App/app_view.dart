@@ -26,7 +26,7 @@ class _AppViewState extends State<AppView> {
             ),
           ),
           title: 'Textomize',
-          home:  SplashScreen(), 
+          home:  SplashView(),
         );
       },
     );

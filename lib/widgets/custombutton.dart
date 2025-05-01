@@ -6,10 +6,11 @@ class CustomButton extends StatelessWidget {
         required this.title,
         this.onTap,
         this.topMargin = 0.0,
-        this.fillColor = true});
+        this.fillColor = true, this.icon});
 
   final String title;
   final VoidCallback? onTap;
+  final IconData? icon;
   final double topMargin;
   final bool fillColor;
 
