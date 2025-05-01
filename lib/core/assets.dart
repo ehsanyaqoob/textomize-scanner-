@@ -3,6 +3,7 @@ class Assets {
   static const String logo = 'assets/images/logo.png';
   static const String background = 'assets/images/background.png';
   static const String ellipse = 'assets/png/Ellipse.png';
+  static const String applogo = 'assets/png/textomizelogo.png';
 
   // SVGs
   static const String home = 'assets/svg/home.svg';

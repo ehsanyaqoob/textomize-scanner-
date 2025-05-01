@@ -1,7 +1,7 @@
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:textomize/core/assets.dart';
 import 'package:textomize/core/exports.dart';
 import '../../core/constatnts.dart';
-
 class SplashScreen extends StatelessWidget {
   const SplashScreen({Key? key}) : super(key: key);
 
@@ -15,13 +15,15 @@ class SplashScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/png/LogoWhite.png',
-              height: 100.h,
-            ),
+            Obx(() => splashController.showLogo.value
+                ? Image.asset(
+                    Assets.applogo,
+                    height: 100.h,
+                  )
+                : const SizedBox.shrink()),
             SizedBox(height: 20.h),
             Obx(
-              () => splashController.isVisible.value
+              () => splashController.isLoading.value
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
