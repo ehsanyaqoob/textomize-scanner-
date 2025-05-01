@@ -49,68 +49,44 @@ class SignInController extends GetxController {
       Get.offAll(() => NavBarNavigation());
     });
   }
+Future<void> signInWithMock() async {
+  final email = emailController.text.trim();
+  final pin = pinController.text.trim();
 
-  /// SIGN IN FUNCTION (API Call Version - Uncomment when API is ready)
-  /*
-  Future<void> signIn() async {
-    final email = emailController.text.trim();
-    final pin = pinController.text.trim();
-
-    if (!_isValidEmail(email)) {
-      _showErrorToast('Please enter a valid email address.');
-      return;
-    }
-
-    if (pin.isEmpty) {
-      _showErrorToast('Password cannot be empty.');
-      return;
-    }
-
-    isLoading.value = true;
-
-    try {
-      final response = await http.post(
-        Uri.parse(ApiService.signInEndpoint),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': pin}),
-      );
-
-      isLoading.value = false;
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final token = data['token'];
-        final applicant = data['applicant'];
-
-        final name = applicant['name'];
-        final userEmail = applicant['email'];
-        final userId = applicant['id']?.toString() ?? '';
-        final userPhone = applicant['phone'] ?? '';
-
-        if (userId.isEmpty) {
-          debugPrint('Warning: User ID is empty in API response');
-        }
-
-        await StorageService.setLoggedIn(true);
-        await StorageService.saveUserToken(token);
-        await StorageService.saveUserName(name);
-        await StorageService.saveUserEmail(userEmail);
-        await StorageService.saveUserId(userId);
-        // await StorageService.savePhoneNumber(userPhone);
-
-        _showSuccessToast('Welcome, $name!');
-        Get.offAll(() => NavBarNavigation());
-      } else {
-        final error = jsonDecode(response.body);
-        _showErrorToast(error['message'] ?? 'Invalid credentials.');
-      }
-    } catch (e) {
-      isLoading.value = false;
-      _showErrorToast('Something went wrong. Please try again.');
-      debugPrint('Login Error: $e');
-    }
+  if (email.isEmpty || !_isValidEmail(email)) {
+    _showErrorToast('Enter a valid email address.');
+    return;
   }
-  */
+
+  if (pin.isEmpty) {
+    _showErrorToast('Enter your password.');
+    return;
+  }
+
+  isLoading.value = true;
+
+  try {
+    // Simulate a network delay
+    await Future.delayed(const Duration(seconds: 2));
+
+    // ✔️ Only save when user successfully signs in (no dummy data)
+    await StorageService.setLoggedIn(true);
+    await StorageService.saveUserToken('token_${DateTime.now().millisecondsSinceEpoch}');
+    await StorageService.saveUserName(email.split('@').first.capitalizeFirst ?? 'User');  // Name from email
+    await StorageService.saveUserEmail(email);
+    // Id optional: you can skip or generate dynamically if needed
+    await StorageService.saveUserId(DateTime.now().millisecondsSinceEpoch.toString());
+
+    isLoading.value = false;
+
+    _showSuccessToast('Welcome, ${email.split('@').first.capitalizeFirst}!');
+    Get.offAll(() => NavBarNavigation());
+  } catch (e) {
+    isLoading.value = false;
+    _showErrorToast('Something went wrong. Please try again.');
+    debugPrint('Login Error: $e');
+  }
+}
 
   /// Email validation
   bool _isValidEmail(String email) {

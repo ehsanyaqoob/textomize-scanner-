@@ -4,6 +4,8 @@ class Assets {
   static const String background = 'assets/images/background.png';
   static const String ellipse = 'assets/png/Ellipse.png';
   static const String applogo = 'assets/png/textomizelogo.png';
+ 
+   static const String particles = 'assets/png/particles.jpg';
 
   // SVGs
   static const String home = 'assets/svg/home.svg';

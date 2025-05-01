@@ -4,29 +4,31 @@ import 'package:textomize/core/exports.dart';
 import 'package:textomize/core/storage_services.dart';
 import '../modules/splash/splash_view.dart';
 
-class AppView extends StatefulWidget {
-  const AppView({super.key});
+class App extends StatefulWidget {
+  const App({super.key});
 
   @override
-  State<AppView> createState() => _AppViewState();
+  State<App> createState() => _AppState();
 }
 
-class _AppViewState extends State<AppView> {
+class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: const Size(375, 812),
-      builder: (context, child) {
+      designSize: const Size(360, 690),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (_, child) {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
-            scaffoldBackgroundColor: AppColors.white,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: AppColors.primaryColor,
-            ),
+            primaryColor: AppColors.appPrimary,
           ),
           title: 'Textomize',
-          home:  SplashScreen(), 
+          initialBinding: BindingsBuilder(() {
+            Get.put(StorageService());
+          }),
+          home: SplashView(),
         );
       },
     );

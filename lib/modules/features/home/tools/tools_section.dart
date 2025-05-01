@@ -60,25 +60,27 @@ class ToolsSection extends StatelessWidget {
               },
               child: Column(
                 children: [
-                  Container(
-                    width: 70.0.w,
-                    height: 70.0.h,
-                    decoration: BoxDecoration(
-                      color: containerColors[index % containerColors.length],
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.2),
-                          blurRadius: 6,
-                          offset: Offset(2, 2),
+                  Expanded(
+                    child: Container(
+                      width: 70.0.w,
+                      height: 70.0.h,
+                      decoration: BoxDecoration(
+                        color: containerColors[index % containerColors.length],
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.2),
+                            blurRadius: 6,
+                            offset: Offset(2, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Icon(
+                          tool.icon, // Access the icon directly from the tool model
+                          color: iconColors[index % iconColors.length],
+                          size: 32.0.sp,
                         ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Icon(
-                        tool.icon, // Access the icon directly from the tool model
-                        color: iconColors[index % iconColors.length],
-                        size: 32.0.sp,
                       ),
                     ),
                   ),

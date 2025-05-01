@@ -20,6 +20,8 @@ class _SignInViewState extends State<SignInView> {
       appBar: CustomAppBar(
         title: "Sign In",
         centerTitle: true,
+       
+
       ),
       body: Obx(() {
         if (signInController.isLoading.value) {

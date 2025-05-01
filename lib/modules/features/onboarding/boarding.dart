@@ -1,9 +1,20 @@
-
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
-import 'package:textomize/core/exports.dart';
-import 'package:textomize/modules/features/auth/signIn_view.dart';
+import 'package:textomize/modules/features/onboarding/initialpage.dart';
 
+import '../../../core/exports.dart';
+class OnboardItem {
+  final String image;
+  final String title;
+  final String subtitle;
 
+  OnboardItem({
+    required this.image,
+    required this.title,
+    required this.subtitle,
+  });
+}
 class Boarding extends StatefulWidget {
   const Boarding({super.key});
 
@@ -14,37 +25,38 @@ class Boarding extends StatefulWidget {
 class _BoardingState extends State<Boarding> {
   final PageController _controller = PageController();
   final List<OnboardItem> _pages = [
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Scan Anything, Anytime',
-      subtitle:
-          'Our advanced OCR technology lets you scan and extract text from documents, images, and more, instantly and accurately.',
-    ),
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Your Documents, Digitized',
-      subtitle:
-          'Transform physical documents into editable, searchable digital files with just a snap of your camera.',
-    ),
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Speed and Accuracy Combined',
-      subtitle:
-          'Our OCR technology processes text quickly and accurately, saving you time while ensuring precision.',
-    ),
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Scan Multiple Languages',
-      subtitle:
-          'Whether it’s English, Spanish, Arabic, or more, our OCR system can recognize and process text in a variety of languages.',
-    ),
-    OnboardItem(
-      image: 'assets/png/women.jpg',
-      title: 'Intelligent Text Extraction',
-      subtitle:
-          'Automatically extract relevant information, like dates, addresses, and names, from your scanned documents.',
-    ),
-  ];
+  OnboardItem(
+    image: 'assets/png/women.jpg',
+    title: 'Learn & Practice',
+    subtitle:
+        'Access a wide range of quizzes for public and private sector tests. Practice anytime, anywhere at your own pace.',
+  ),
+  OnboardItem(
+    image: 'assets/png/kids.jpg',
+    title: 'Job Prep Made Easy',
+    subtitle:
+        'Stay ahead with our up-to-date material designed for FPSC, PPSC, NTS, and other job-related exams.',
+  ),
+  OnboardItem(
+    image: 'assets/png/painting.jpg',
+    title: 'Mock Tests & Results',
+    subtitle:
+        'Take full-length mock tests and get instant results with detailed explanations to improve your performance.',
+  ),
+  OnboardItem(
+    image: 'assets/png/grandpa.jpg',
+    title: 'All Categories Covered',
+    subtitle:
+        'From general knowledge to subject-specific quizzes — we’ve got every topic covered under one roof.',
+  ),
+  OnboardItem(
+    image: 'assets/png/painting.jpg',
+    title: 'Your Progress, Tracked',
+    subtitle:
+        'Track your scores, revisit weak areas, and stay motivated with your personal learning dashboard.',
+  ),
+];
+
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +99,7 @@ class _BoardingState extends State<Boarding> {
                 },
                 child: InkWell(
                   onTap: () {
-                    Get.to(() => SignInView());
+                    Get.to(() => Initialpage());
                   },
                   child: CustomText(
                     text: "Skip",
@@ -120,19 +132,6 @@ class _BoardingState extends State<Boarding> {
       ),
     );
   }
-}
-
-
-class OnboardItem {
-  final String image;
-  final String title;
-  final String subtitle;
-
-  OnboardItem({
-    required this.image,
-    required this.title,
-    required this.subtitle,
-  });
 }
 
 class OnboardPage extends StatelessWidget {

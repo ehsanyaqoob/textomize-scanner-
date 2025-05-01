@@ -3,39 +3,38 @@ import 'package:shared_preferences/shared_preferences.dart';
 class StorageService {
   static late SharedPreferences _prefs;
 
-  // -------------------- INIT --------------------
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
   }
+
 
   // -------------------- Onboarding --------------------
   static Future<void> setOnboardingSeen(bool seen) async {
     await _prefs.setBool('onboarding_seen', seen);
   }
 
-  static Future<bool> hasSeenOnboarding() async {
+  static bool hasSeenOnboarding() {
     return _prefs.getBool('onboarding_seen') ?? false;
   }
+// -------------------- Login / Signup --------------------
+// services/storage_service.dart
+static Future<void> saveUserProfileImagePath(String path) async {
+  await _prefs.setString('userProfileImagePath', path);
+}
 
-  // -------------------- Login / Signup --------------------
+static String? getUserProfileImagePath() {
+  return _prefs.getString('userProfileImagePath');
+}
+  static Future<void> removeUserProfileImagePath() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('userProfileImagePath');
+  }
   static Future<void> setLoggedIn(bool value) async {
     await _prefs.setBool('is_logged_in', value);
   }
 
-  static Future<bool> isLoggedIn() async {
+  static bool isLoggedIn() {
     return _prefs.getBool('is_logged_in') ?? false;
-  }
-
-  static Future<void> saveUserProfileImagePath(String path) async {
-    await _prefs.setString('user_profile_image_path', path);
-  }
-
-  static String? getUserProfileImagePath() {
-    return _prefs.getString('user_profile_image_path');
-  }
-
-  static Future<void> removeUserProfileImagePath() async {
-    await _prefs.remove('user_profile_image_path');
   }
 
   static Future<void> saveUserToken(String token) async {
@@ -70,15 +69,27 @@ class StorageService {
     return _prefs.getString('user_id');
   }
 
+  /// Optional: If in future phone is added in API, you can uncomment this.
+  /// For now, no need to save phone because it's not present.
+/*
+static Future<void> savePhoneNumber(String phone) async {
+  await _prefs.setString('user_phone', phone);
+}
+
+static String? getPhoneNumber() {2\
+  return _prefs.getString('user_phone');
+}
+*/
+
   // -------------------- Clear Session (Logout) --------------------
   static Future<void> clearSession() async {
     await _prefs.remove('is_logged_in');
     await _prefs.remove('user_token');
     await _prefs.remove('user_name');
     await _prefs.remove('user_email');
-    await _prefs.remove('user_profile_image_path');
+    await _prefs.remove('user_phone');
     await _prefs.remove('user_id');
-    // (Onboarding ka data nahi delete kar rahe)
+    // Optional: keep onboarding status
   }
 
   // -------------------- Generic Set/Get --------------------
@@ -118,4 +129,29 @@ class StorageService {
   static Future<void> logOut() async {
     await _prefs.clear();
   }
+
+  static getImagePath(param0) {
+    return _prefs.getString('userProfileImagePath');
+
+  }
 }
+
+
+// await StorageService.init();
+
+// // Save login session
+// await StorageService.setLoggedIn(true);
+
+// // Save onboarding
+// await StorageService.setOnboardingSeen(true);
+
+// // Save user data
+// await StorageService.saveUserToken("abc123");
+// await StorageService.saveUserName("Ali Khan");
+
+// // Get data
+// final isLoggedIn = StorageService.isLoggedIn();
+// final token = StorageService.getUserToken();
+
+// // Logout
+// await StorageService.logOut();
