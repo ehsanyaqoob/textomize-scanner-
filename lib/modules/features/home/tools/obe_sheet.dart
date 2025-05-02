@@ -1,71 +1,12 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:textomize/controllers/obe_controller.dart';
 import '../../../../core/exports.dart';
 
-class OBESheetView extends StatefulWidget {
-  const OBESheetView({super.key});
+class OBESheetView extends GetView<OBESheetController> {
+  OBESheetView({Key? key}) : super(key: key);
 
-  @override
-  State<OBESheetView> createState() => _OBESheetViewState();
-}
-
-class _OBESheetViewState extends State<OBESheetView> {
-  // Variables to hold user inputs
-  int? quizzes;
-  int? mids;
-  int? finals;
-  int? practicals;
-  bool dataFilled = false;
-  String? excelFileName;
-
-  void _openBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return _OBEBottomSheet(
-          onSubmit: (fileName, quiz, mid, finalExam, practical) {
-            setState(() {
-              excelFileName = fileName;
-              quizzes = quiz;
-              mids = mid;
-              finals = finalExam;
-              practicals = practical;
-              dataFilled = true;
-            });
-          },
-        );
-      },
-    );
-  }
-
-  void _goToNextPage() {
-  if (dataFilled) {
-    // You can pass the data to the next page using GetX
-    // Example: Passing the data to another screen
-    
-    Get.to(
-      NextPage(
-        excelFileName: excelFileName,
-        quizzes: quizzes,
-        mids: mids,
-        finals: finals,
-        practicals: practicals,
-      ),
-    );
-  } else {
-    // If data is not filled, you can show a toast or an error message
-    Fluttertoast.showToast(
-      msg: "Please fill all required fields first.",
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-      gravity: ToastGravity.BOTTOM,
-      toastLength: Toast.LENGTH_SHORT,
-    );
-  }
-  }
-
+final OBESheetController controller = Get.put(OBESheetController());
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -73,160 +14,111 @@ class _OBESheetViewState extends State<OBESheetView> {
         title: 'OBE Sheet',
         actions: [
           IconButton(
-            icon: const Icon(Icons.add, color: AppColors.white),
-            onPressed: () {},
+            icon: const Icon(Icons.info_outline, color: AppColors.white),
+            onPressed: () {
+              Get.defaultDialog(
+                title: "OBE Sheet Help",
+                content: const Text(
+                  "Upload your Excel file and specify the number of each assessment type. "
+                  "The system will process the data according to OBE standards.",
+                ),
+                textConfirm: "OK",
+                onConfirm: () => Get.back(),
+              );
+            },
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              CustomText(
-                textAlign: TextAlign.center,
-                text: 'Choose the OBE sheet you want to work on',
-                fontSize: 24.sp,
-                fontWeight: FontWeight.bold,
-                color: AppColors.primaryColor,
-              ),
-              10.height,
-              CustomButton(
-                title: 'Create New OBE Sheet',
-                fillColor: true,
-                onTap: _openBottomSheet,
-              ),
-              10.height,
-              CustomButton(
-                title: 'Create Existing OBE Sheet',
-                fillColor: true,
-                onTap: () {
-                  // Implement functionality to create an existing OBE sheet
-                  Fluttertoast.showToast(
-                    msg: "Feature not implemented yet.",
-                    backgroundColor: Colors.redAccent,
-                    textColor: Colors.white,
-                    gravity: ToastGravity.BOTTOM,
-                    toastLength: Toast.LENGTH_SHORT,
-                  );
-
-                },
-              ),
-              20.height,
-
-              // Show details if filled
-              if (dataFilled) ...[
-                const Divider(),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(child: CustomLoader());
+        }
+        
+        return SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
                 CustomText(
-                  text: "Excel File: $excelFileName",
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.w500,
+                  textAlign: TextAlign.center,
+                  text: 'Choose the OBE sheet you want to work on',
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryColor,
                 ),
-                8.height,
-                CustomText(text: "Quizzes: $quizzes"),
-                CustomText(text: "Mid Exams: $mids"),
-                CustomText(text: "Final Exams: $finals"),
-                CustomText(text: "Practicals: $practicals"),
-                20.height,
+                10.height,
                 CustomButton(
-                  title: "Generate",
+                  title: 'Create New OBE Sheet',
                   fillColor: true,
-                  onTap: _goToNextPage,
+                  onTap: _openBottomSheet,
                 ),
-              ]
-            ],
+                10.height,
+                CustomButton(
+                  title: 'Create Existing OBE Sheet',
+                  fillColor: true,
+                  onTap: () {
+                    Fluttertoast.showToast(
+                      msg: "Feature not implemented yet.",
+                      backgroundColor: Colors.redAccent,
+                    );
+                  },
+                ),
+                20.height,
+
+                // Show details if filled
+                if (controller.dataFilled.value) ...[
+                  const Divider(),
+                  CustomText(
+                    text: "Excel File: ${controller.excelFileName.value}",
+                    fontSize: 16.sp,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  8.height,
+                  CustomText(text: "Quizzes: ${controller.quizzes.value}"),
+                  CustomText(text: "Mid Exams: ${controller.mids.value}"),
+                  CustomText(text: "Final Exams: ${controller.finals.value}"),
+                  CustomText(text: "Practicals: ${controller.practicals.value}"),
+                  if (controller.extractedData.isNotEmpty) ...[
+                    8.height,
+                    CustomText(
+                      text: "Data Rows: ${controller.extractedData.length}",
+                      fontSize: 14.sp,
+                      color: AppColors.greyColor,
+                    ),
+                  ],
+                  20.height,
+                  CustomButton(
+                    title: "Generate OBE Sheet",
+                    fillColor: true,
+                    onTap: controller.generateOBESheet,
+                  ),
+                ]
+              ],
+            ),
           ),
-        ),
+        );
+      }),
+    );
+  }
+
+  void _openBottomSheet() {
+    Get.bottomSheet(
+      OBEBottomSheet(),
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
     );
   }
 }
 
-class _OBEBottomSheet extends StatefulWidget {
-  final Function(
-          String fileName, int quizzes, int mids, int finals, int practicals)
-      onSubmit;
-
-  const _OBEBottomSheet({required this.onSubmit});
-
-  @override
-  State<_OBEBottomSheet> createState() => _OBEBottomSheetState();
-}
-
-class _OBEBottomSheetState extends State<_OBEBottomSheet> {
+class OBEBottomSheet extends GetView<OBESheetController> {
   final _formKey = GlobalKey<FormState>();
-  String? fileName;
   final TextEditingController quizzesController = TextEditingController();
   final TextEditingController midsController = TextEditingController();
   final TextEditingController finalsController = TextEditingController();
   final TextEditingController practicalsController = TextEditingController();
-
-  Future<void> _pickExcelFile() async {
-    _showLoadingDialog(); // Show loader
-
-    // Simulate delay for picking/uploading file
-    await Future.delayed(const Duration(seconds: 2));
-
-    // After picking
-    Navigator.pop(context); // Close loader
-
-    setState(() {
-      fileName =
-          "SampleExcel_${DateTime.now().millisecondsSinceEpoch}.xlsx"; // Example file
-    });
-
-    // Show success toast
-    Fluttertoast.showToast(
-      msg: "Excel uploaded successfully!",
-      backgroundColor: Colors.green,
-      textColor: Colors.white,
-      gravity: ToastGravity.BOTTOM,
-      toastLength: Toast.LENGTH_SHORT,
-    );
-  }
-
-  void _showLoadingDialog() {
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (_) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            CustomLoader(),
-            8.height,
-            CustomText(
-              text: "Uploading...",
-              fontSize: 14.sp,
-              fontWeight: FontWeight.w500,
-              color: Colors.black87,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _submit() {
-    if (_formKey.currentState!.validate() && fileName != null) {
-      widget.onSubmit(
-        fileName!,
-        int.parse(quizzesController.text),
-        int.parse(midsController.text),
-        int.parse(finalsController.text),
-        int.parse(practicalsController.text),
-      );
-      Navigator.pop(context);
-    } else if (fileName == null) {
-      Fluttertoast.showToast(
-        msg: "Please upload an Excel file first.",
-        backgroundColor: Colors.redAccent,
-        textColor: Colors.white,
-        gravity: ToastGravity.BOTTOM,
-        toastLength: Toast.LENGTH_SHORT,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -270,60 +162,127 @@ class _OBEBottomSheetState extends State<_OBEBottomSheet> {
                 ),
               ),
               const SizedBox(height: 20),
-              CustomButton(
-                title: fileName == null ? "Upload Excel" : "Re-upload Excel",
-                fillColor: true,
-                onTap: _pickExcelFile,
-              ),
-              const SizedBox(height: 10),
-              if (fileName != null)
-                Center(
-                  child: Text(
-                    fileName!,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
+              Obx(() {
+                return Column(
+                  children: [
+                    CustomButton(
+                      title: controller.excelFileName.isEmpty
+                          ? "Upload Excel File"
+                          : "Re-upload Excel File",
+                      fillColor: true,
+                      onTap: controller.pickExcelFile,
                     ),
-                  ),
-                ),
+                    if (controller.excelFileName.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        "Selected: ${controller.excelFileName.value}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.green,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      if (controller.extractedData.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Text(
+                          "${controller.extractedData.length} rows detected",
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.blue,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ],
+                );
+              }),
               const SizedBox(height: 20),
               Text(
-                "Enter Details",
+                "Assessment Configuration",
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 10),
-              CustomTextField(
+              CustomTextFormField(
                 hint: "Number of Quizzes",
                 controller: quizzesController,
                 inputType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter number of quizzes';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
+              
               ),
               const SizedBox(height: 10),
-              CustomTextField(
+              CustomTextFormField(
                 hint: "Number of Mid Exams",
                 controller: midsController,
                 inputType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter number of mid exams';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 10),
-              CustomTextField(
+              CustomTextFormField(
                 hint: "Number of Final Exams",
                 controller: finalsController,
                 inputType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter number of final exams';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 10),
-              CustomTextField(
+              CustomTextFormField(
                 hint: "Number of Practical Exams",
                 controller: practicalsController,
                 inputType: TextInputType.number,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter number of practical exams';
+                  }
+                  if (int.tryParse(value) == null) {
+                    return 'Please enter a valid number';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 30),
-              CustomButton(
-                title: "Submit",
-                fillColor: true,
-                onTap: _submit,
-              ),
+              Obx(() {
+                return CustomButton(
+                  title: "Submit Configuration",
+                  fillColor: true,
+                  onTap: () {
+                    if (_formKey.currentState!.validate()) {
+                      controller.saveForm(
+                        quizValue: quizzesController.text,
+                        midValue: midsController.text,
+                        finalValue: finalsController.text,
+                        practicalValue: practicalsController.text,
+                      );
+                    }
+                  },
+                  isLoading: controller.isLoading.value,
+                );
+              }),
             ],
           ),
         ),
@@ -331,38 +290,175 @@ class _OBEBottomSheetState extends State<_OBEBottomSheet> {
     );
   }
 }
-class NextPage extends StatelessWidget {
-  final String? excelFileName;
-  final int? quizzes;
-  final int? mids;
-  final int? finals;
-  final int? practicals;
 
-  const NextPage({
-    super.key,
-    this.excelFileName,
-    this.quizzes,
-    this.mids,
-    this.finals,
-    this.practicals,
-  });
+class OBEPreviewView extends StatelessWidget {
+  const OBEPreviewView({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final args = Get.arguments as Map<String, dynamic>;
+    final extractedData = args['extractedData'] as List<Map<String, dynamic>>;
+    final processedData = args['processedData'] as List<Map<String, dynamic>>;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Next Page')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text('Excel File: $excelFileName'),
-            Text('Quizzes: $quizzes'),
-            Text('Mid Exams: $mids'),
-            Text('Final Exams: $finals'),
-            Text('Practicals: $practicals'),
-          ],
+      appBar: CustomAppBar(
+        title: 'OBE Sheet Preview',
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.download, color: AppColors.white),
+            onPressed: () {
+              // Implement download functionality
+              Fluttertoast.showToast(
+                msg: "Exporting processed data...",
+                backgroundColor: Colors.green,
+              );
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Summary Card
+              Card(
+                elevation: 4,
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      CustomText(
+                        text: "File: ${args['excelFileName']}",
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      const Divider(),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CustomText(text: "Quizzes: ${args['quizzes']}"),
+                              CustomText(text: "Mid Exams: ${args['mids']}"),
+                            ],
+                          ),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CustomText(text: "Finals: ${args['finals']}"),
+                              CustomText(text: "Practicals: ${args['practicals']}"),
+                            ],
+                          ),
+                        ],
+                      ),
+                      const Divider(),
+                      CustomText(
+                        text: "Data Summary",
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      8.height,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          CustomText(text: "Original Rows: ${extractedData.length}"),
+                          CustomText(text: "Processed Rows: ${processedData.length}"),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              20.height,
+              
+              // Data Preview Section
+              CustomText(
+                text: "Processed Data Preview",
+                fontSize: 18.sp,
+                fontWeight: FontWeight.bold,
+              ),
+              10.height,
+              
+              // Show a sample of the processed data
+              if (processedData.isNotEmpty) ...[
+                Card(
+                  elevation: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: DataTable(
+                        columns: _buildColumns(processedData.first.keys.toList()),
+                        rows: _buildRows(processedData.take(5).toList()),
+                      ),
+                    ),
+                  ),
+                ),
+                10.height,
+                CustomText(
+                  text: "Showing first 5 of ${processedData.length} rows",
+                  fontSize: 12.sp,
+                  color: AppColors.greyColor,
+                ),
+              ],
+              
+              20.height,
+              Row(
+                children: [
+                  Expanded(
+                    child: CustomButton(
+                      title: "Export Results",
+                      fillColor: true,
+                      onTap: () {
+                        // Implement export functionality
+                        Fluttertoast.showToast(
+                          msg: "Export feature coming soon!",
+                          backgroundColor: Colors.blue,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: CustomButton(
+                      title: "Analyze Data",
+                      fillColor: false,
+                      onTap: () {
+                        Get.toNamed('/obe-analysis', arguments: args);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  List<DataColumn> _buildColumns(List<String> keys) {
+    return keys.map((key) {
+      return DataColumn(
+        label: Text(
+          key,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+      );
+    }).toList();
+  }
+
+  List<DataRow> _buildRows(List<Map<String, dynamic>> data) {
+    return data.map((row) {
+      return DataRow(
+        cells: row.keys.map((key) {
+          return DataCell(Text(row[key]?.toString() ?? ''));
+        }).toList(),
+      );
+    }).toList();
   }
 }
