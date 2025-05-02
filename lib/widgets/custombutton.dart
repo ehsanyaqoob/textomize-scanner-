@@ -4,6 +4,7 @@ class CustomButton extends StatelessWidget {
   const CustomButton(
       {super.key,
         required this.title,
+        this.isLoading = false,
         this.onTap,
         this.topMargin = 0.0,
         this.fillColor = true, this.icon});
@@ -13,6 +14,8 @@ class CustomButton extends StatelessWidget {
   final IconData? icon;
   final double topMargin;
   final bool fillColor;
+  
+  final dynamic isLoading;
 
   @override
   Widget build(BuildContext context) {

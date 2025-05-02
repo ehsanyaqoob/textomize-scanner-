@@ -48,6 +48,7 @@ class CustomTextFormField extends StatelessWidget {
   final String? errorText;
   final bool? readOnly;
   final bool? autoFocus;
+
   final Widget? suffix;
   final double? topPadding;
   final TextAlign textAlign;
