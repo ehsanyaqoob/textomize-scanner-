@@ -167,6 +167,7 @@ class ScanDocumentView extends StatelessWidget {
             onTap: () => _showImageSourceSheet(context),
             fillColor: true,
             icon: Icons.camera_alt,
+            topMargin: 160,
           )
         else if (controller.isProcessing.value)
           Column(
@@ -193,6 +194,7 @@ class ScanDocumentView extends StatelessWidget {
                       onTap: () => _showImageSourceSheet(context),
                       fillColor: false,
                       icon: Icons.refresh,
+                      topMargin: 100,
                     ),
                   ),
                   SizedBox(width: 16.w),
@@ -202,6 +204,7 @@ class ScanDocumentView extends StatelessWidget {
                       onTap: controller.processImageAndNavigate,
                       fillColor: true,
                       icon: Icons.check_circle_outline,
+                      topMargin: 100,
                     ),
                   ),
                 ],

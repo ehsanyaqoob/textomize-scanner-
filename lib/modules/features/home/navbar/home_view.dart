@@ -193,11 +193,11 @@ class RecentFilesSection extends StatelessWidget {
                     height: 50,
                     width: 50,
                     decoration: BoxDecoration(
-                      color: Colors.blueAccent.withOpacity(0.2),
+                      color: AppColors.primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(Icons.description,
-                        size: 30, color: Colors.blueAccent),
+                        size: 30, color: AppColors.primaryColor),
                   ),
                   SizedBox(width: 12.0),
                   Expanded(
