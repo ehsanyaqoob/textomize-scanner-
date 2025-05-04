@@ -1,148 +1,182 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:textomize/core/storage_services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../core/storage_services.dart';
+import '../core/firebase/auth_service.dart';
 import '../modules/features/home/navbar/NavBar.dart';
 
 class SignInController extends GetxController {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController pinController = TextEditingController();  // Optional: if you're using a PIN
+  final TextEditingController pinController = TextEditingController();
 
   RxBool isLoading = false.obs;
   RxBool rememberMe = false.obs;
 
-  /// SIGN IN FUNCTION (Simulated Login)
-  void signIn() async {
-    String email = emailController.text.trim();
-    String password = passwordController.text.trim();
+  final AuthService _authService = AuthService();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  /// SIGN IN FUNCTION using Firebase Auth & Firestore
+  Future<void> signIn() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    debugPrint('Attempting sign in user: $email');
+
+    if (!_validateInputs(email, password)) {
+      return;
+    }
+
+    isLoading.value = true;
+    debugPrint('Starting authentication process');
+
+    try {
+      final userCredential = await _authService.signIn(email, password);
+      final user = userCredential.user;
+
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'no-user',
+          message: 'Authentication failed - no user returned',
+        );
+      }
+
+      debugPrint('User signed in successfully: ${user.uid}');
+      debugPrint('User displayName: ${user.displayName}');
+      debugPrint('User email: ${user.email}');
+
+      // Fetch extra user details from Firestore
+      final userData = await _fetchUserProfile(user.uid);
+
+      // Save user details if 'Remember Me' is checked
+      if (rememberMe.value) {
+        await _saveUserDetails(user, userData);
+      }
+
+      _showSuccessToast('Welcome back!');
+      _navigateToHome();
+
+    } on FirebaseAuthException catch (e) {
+      debugPrint('FirebaseAuthException during sign in: ${e.code} - ${e.message}');
+      _showErrorToast(e.message ?? 'Authentication failed');
+    } catch (e) {
+      debugPrint('Unexpected error during sign in: $e');
+      _showErrorToast('Something went wrong. Please try again.');
+    } finally {
+      isLoading.value = false;
+      debugPrint('Sign in process completed');
+    }
+  }
+
+  /// Fetches user profile data from Firestore
+  Future<Map<String, dynamic>?> _fetchUserProfile(String uid) async {
+    debugPrint('Fetching user profile from Firestore for UID: $uid');
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        debugPrint('User profile data found: ${doc.data()}');
+        return doc.data();
+      } else {
+        debugPrint('User profile does not exist in Firestore.');
+        return null;
+      }
+    } catch (e) {
+      debugPrint('Error fetching user profile: $e');
+      return null;
+    }
+  }
+
+  /// Saves user details into SharedPreferences
+  Future<void> _saveUserDetails(User user, Map<String, dynamic>? userData) async {
+    debugPrint('Saving user details to SharedPreferences...');
+
+    final userName = userData?['name'] ?? user.displayName ?? '';
+    final userEmail = user.email ?? '';
+    final userId = user.uid;
+    final userRole = userData?['role'] ?? '';
+    final userPhone = userData?['phone'] ?? '';
+
+    debugPrint('UserName: $userName');
+    debugPrint('UserEmail: $userEmail');
+    debugPrint('UserId: $userId');
+    debugPrint('UserRole: $userRole');
+    debugPrint('UserPhone: $userPhone');
+
+    await StorageService.setLoggedIn(true);
+    await StorageService.saveUserName(userName);
+    await StorageService.saveUserEmail(userEmail);
+    await StorageService.saveUserId(userId);
+    await StorageService.saveUserRole(userRole);      // You'll need to add this in StorageService
+    await StorageService.saveUserPhone(userPhone);    // Add this too
+
+    debugPrint('✅ All user details saved in SharedPreferences');
+  }
+
+  /// Navigates to the home screen
+  void _navigateToHome() {
+    debugPrint('Navigating to home screen...');
+    Get.offAll(() => NavBarNavigation());
+  }
+
+  /// Validates email format
+  bool _isValidEmail(String email) {
+    const pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$';
+    final regExp = RegExp(pattern);
+    final isValid = regExp.hasMatch(email);
+    if (!isValid) {
+      debugPrint('Invalid email format: $email');
+    }
+    return isValid;
+  }
+
+  /// Validates the email and password inputs
+  bool _validateInputs(String email, String password) {
     if (!_isValidEmail(email)) {
       _showErrorToast('Please enter a valid email address');
-      return;
+      return false;
     }
 
     if (password.isEmpty) {
       _showErrorToast('Password cannot be empty');
-      return;
+      return false;
     }
 
     if (password.length < 6) {
       _showErrorToast('Password must be at least 6 characters long');
-      return;
+      return false;
     }
 
-    isLoading.value = true;
-
-    // Simulate API Call Delay
-    await Future.delayed(Duration(seconds: 2), () async {
-      isLoading.value = false;
-
-      if (rememberMe.value) {
-        await StorageService.setLoggedIn(true);
-        await StorageService.saveUserName("Demo User");
-        await StorageService.saveUserEmail(email);
-        await StorageService.saveUserId("123");  // Simulated user ID
-      }
-
-      _showSuccessToast('You have successfully signed in!');
-      Get.offAll(() => NavBarNavigation());
-    });
+    return true;
   }
 
-  /// SIGN IN FUNCTION (API Call Version - Uncomment when API is ready)
-  /*
-  Future<void> signIn() async {
-    final email = emailController.text.trim();
-    final pin = pinController.text.trim();
-
-    if (!_isValidEmail(email)) {
-      _showErrorToast('Please enter a valid email address.');
-      return;
-    }
-
-    if (pin.isEmpty) {
-      _showErrorToast('Password cannot be empty.');
-      return;
-    }
-
-    isLoading.value = true;
-
-    try {
-      final response = await http.post(
-        Uri.parse(ApiService.signInEndpoint),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'password': pin}),
-      );
-
-      isLoading.value = false;
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final token = data['token'];
-        final applicant = data['applicant'];
-
-        final name = applicant['name'];
-        final userEmail = applicant['email'];
-        final userId = applicant['id']?.toString() ?? '';
-        final userPhone = applicant['phone'] ?? '';
-
-        if (userId.isEmpty) {
-          debugPrint('Warning: User ID is empty in API response');
-        }
-
-        await StorageService.setLoggedIn(true);
-        await StorageService.saveUserToken(token);
-        await StorageService.saveUserName(name);
-        await StorageService.saveUserEmail(userEmail);
-        await StorageService.saveUserId(userId);
-        // await StorageService.savePhoneNumber(userPhone);
-
-        _showSuccessToast('Welcome, $name!');
-        Get.offAll(() => NavBarNavigation());
-      } else {
-        final error = jsonDecode(response.body);
-        _showErrorToast(error['message'] ?? 'Invalid credentials.');
-      }
-    } catch (e) {
-      isLoading.value = false;
-      _showErrorToast('Something went wrong. Please try again.');
-      debugPrint('Login Error: $e');
-    }
-  }
-  */
-
-  /// Email validation
-  bool _isValidEmail(String email) {
-    return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-        .hasMatch(email);
-  }
-
-  /// Show error toast
+  /// Displays an error toast message
   void _showErrorToast(String message) {
+    debugPrint('Showing error toast: $message');
     Fluttertoast.showToast(
       msg: message,
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,  // 👈 better UX than TOP
-      backgroundColor: Colors.red,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.red[700],
       textColor: Colors.white,
-      fontSize: 16.0,
+      fontSize: 14.0,
     );
   }
 
-  /// Show success toast
+  /// Displays a success toast message
   void _showSuccessToast(String message) {
+    debugPrint('Showing success toast: $message');
     Fluttertoast.showToast(
       msg: message,
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.BOTTOM,  // 👈 better UX than TOP
-      backgroundColor: Colors.green,
+      toastLength: Toast.LENGTH_LONG,
+      gravity: ToastGravity.BOTTOM,
+      backgroundColor: Colors.green[700],
       textColor: Colors.white,
-      fontSize: 16.0,
+      fontSize: 14.0,
     );
   }
 
-  /// Dispose controllers
   @override
   void onClose() {
     emailController.dispose();

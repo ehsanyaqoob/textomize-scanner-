@@ -1,16 +1,18 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:textomize/core/exports.dart';
 import 'core/storage_services.dart';
+import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService.init();
-
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   bool isFirstLaunch = await StorageService.getFirstLaunchStatus();
-
   if (isFirstLaunch) {
     runApp(const PermissionHandlerApp());
   } else {
@@ -33,7 +35,8 @@ class PermissionHandlerApp extends StatelessWidget {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
-            return const SizedBox.shrink(); // No UI after permission flow, it jumps to AppView
+            return const SizedBox
+                .shrink(); // No UI after permission flow, it jumps to AppView
           },
         ),
       ),
@@ -61,7 +64,7 @@ Future<void> requestAllPermissions() async {
     Permission.location,
   ];
 
-  // Add iOS-specific permission if applicable
+  // Add iOS-specific permission if applicable 
   if (Platform.isIOS) {
     permissions.add(Permission.photos);
   }
@@ -73,3 +76,6 @@ Future<void> requestAllPermissions() async {
     }
   }
 }
+
+ 
+

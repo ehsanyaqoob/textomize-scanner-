@@ -1,98 +1,168 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'exports.dart';
+
 class StorageService {
   static late SharedPreferences _prefs;
-    static const _firstLaunchKey = 'is_first_launch';
+  
+  // Keys
+  static const _firstLaunchKey = 'is_first_launch';
+  static const _onboardingSeenKey = 'onboarding_seen';
+  static const _loggedInKey = 'is_logged_in';
+  static const _profileImageKey = 'user_profile_image_path';
+  static const _tokenKey = 'user_token';
+  static const _nameKey = 'user_name';
+  static const _emailKey = 'user_email';
+  static const _userIdKey = 'user_id';
+  static const _phoneKey = 'user_phone';
+  static const _lastLoginKey = 'last_login_timestamp';
 
-
-  // -------------------- INIT --------------------
+  // -------------------- Initialization --------------------
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    debugPrint('StorageService initialized');
   }
 
+  // -------------------- First Launch --------------------
   static Future<bool> getFirstLaunchStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_firstLaunchKey) ?? true;
+    return _prefs.getBool(_firstLaunchKey) ?? true;
   }
 
   static Future<void> setFirstLaunchStatus(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_firstLaunchKey, value);
+    await _prefs.setBool(_firstLaunchKey, value);
+    debugPrint('First launch status set to: $value');
   }
+
   // -------------------- Onboarding --------------------
   static Future<void> setOnboardingSeen(bool seen) async {
-    await _prefs.setBool('onboarding_seen', seen);
+    await _prefs.setBool(_onboardingSeenKey, seen);
+    debugPrint('Onboarding seen status set to: $seen');
   }
 
-  static Future<bool> hasSeenOnboarding() async {
-    return _prefs.getBool('onboarding_seen') ?? false;
+  static bool hasSeenOnboarding() {
+    return _prefs.getBool(_onboardingSeenKey) ?? false;
   }
 
-  // -------------------- Login / Signup --------------------
+  // -------------------- Authentication Status --------------------
   static Future<void> setLoggedIn(bool value) async {
-    await _prefs.setBool('is_logged_in', value);
+    await _prefs.setBool(_loggedInKey, value);
+    if (value) {
+      await _prefs.setInt(_lastLoginKey, DateTime.now().millisecondsSinceEpoch);
+    }
+    debugPrint('Logged in status set to: $value');
   }
 
-  static Future<bool> isLoggedIn() async {
-    return _prefs.getBool('is_logged_in') ?? false;
+  static bool isLoggedIn() {
+    return _prefs.getBool(_loggedInKey) ?? false;
   }
 
+  // -------------------- User Profile Data --------------------
   static Future<void> saveUserProfileImagePath(String path) async {
-    await _prefs.setString('user_profile_image_path', path);
+    await _prefs.setString(_profileImageKey, path);
+    debugPrint('Profile image path saved: $path');
   }
 
   static String? getUserProfileImagePath() {
-    return _prefs.getString('user_profile_image_path');
+    return _prefs.getString(_profileImageKey);
   }
 
   static Future<void> removeUserProfileImagePath() async {
-    await _prefs.remove('user_profile_image_path');
+    await _prefs.remove(_profileImageKey);
+    debugPrint('Profile image path removed');
   }
 
+  // -------------------- User Token --------------------
   static Future<void> saveUserToken(String token) async {
-    await _prefs.setString('user_token', token);
+    await _prefs.setString(_tokenKey, token);
+    debugPrint('User token saved');
   }
 
   static String? getUserToken() {
-    return _prefs.getString('user_token');
+    return _prefs.getString(_tokenKey);
+  }
+
+  // -------------------- User Details --------------------
+  static Future<void> saveUserDetails({
+    required String id,
+    required String name,
+    required String email,
+    String? phone,
+    String? profileImage,
+    String? token,
+  }) async {
+    await Future.wait([
+      saveUserId(id),
+      saveUserName(name),
+      saveUserEmail(email),
+      if (phone != null) savePhoneNumber(phone),
+      if (profileImage != null) saveUserProfileImagePath(profileImage),
+      if (token != null) saveUserToken(token),
+    ]);
+    debugPrint('User details saved for: $email');
   }
 
   static Future<void> saveUserName(String name) async {
-    await _prefs.setString('user_name', name);
+    await _prefs.setString(_nameKey, name);
+    debugPrint('User name saved: $name');
   }
 
   static String? getUserName() {
-    return _prefs.getString('user_name');
+    return _prefs.getString(_nameKey);
   }
 
   static Future<void> saveUserEmail(String email) async {
-    await _prefs.setString('user_email', email);
+    await _prefs.setString(_emailKey, email);
+    debugPrint('User email saved: $email');
   }
 
   static String? getUserEmail() {
-    return _prefs.getString('user_email');
+    return _prefs.getString(_emailKey);
   }
 
   static Future<void> saveUserId(String id) async {
-    await _prefs.setString('user_id', id);
+    await _prefs.setString(_userIdKey, id);
+    debugPrint('User ID saved: $id');
   }
 
   static String? getUserId() {
-    return _prefs.getString('user_id');
+    return _prefs.getString(_userIdKey);
   }
 
-  // -------------------- Clear Session (Logout) --------------------
+  static Future<void> savePhoneNumber(String phone) async {
+    await _prefs.setString(_phoneKey, phone);
+    debugPrint('Phone number saved: $phone');
+  }
+
+  static String? getPhoneNumber() {
+    return _prefs.getString(_phoneKey);
+  }
+
+  // -------------------- User Session Management --------------------
   static Future<void> clearSession() async {
-    await _prefs.remove('is_logged_in');
-    await _prefs.remove('user_token');
-    await _prefs.remove('user_name');
-    await _prefs.remove('user_email');
-    await _prefs.remove('user_profile_image_path');
-    await _prefs.remove('user_id');
-    // (Onboarding ka data nahi delete kar rahe)
+    await Future.wait([
+      _prefs.remove(_loggedInKey),
+      _prefs.remove(_tokenKey),
+      _prefs.remove(_nameKey),
+      _prefs.remove(_emailKey),
+      _prefs.remove(_profileImageKey),
+      _prefs.remove(_userIdKey),
+      _prefs.remove(_phoneKey),
+    ]);
+    debugPrint('User session cleared');
   }
 
-  // -------------------- Generic Set/Get --------------------
+  static Future<void> logOut() async {
+    await clearSession();
+    debugPrint('User logged out');
+  }
+
+  // -------------------- Last Login Timestamp --------------------
+  static DateTime? getLastLogin() {
+    final timestamp = _prefs.getInt(_lastLoginKey);
+    return timestamp != null ? DateTime.fromMillisecondsSinceEpoch(timestamp) : null;
+  }
+
+  // -------------------- Generic Methods --------------------
   static Future<void> setString(String key, String value) async {
     await _prefs.setString(key, value);
   }
@@ -125,8 +195,31 @@ class StorageService {
     return _prefs.getDouble(key);
   }
 
-  // -------------------- Logout / Clear All --------------------
-  static Future<void> logOut() async {
-    await _prefs.clear();
+  // -------------------- User Data Bundle --------------------
+  static Map<String, dynamic>? getUserData() {
+    if (!isLoggedIn()) return null;
+    
+    return {
+      'id': getUserId(),
+      'name': getUserName(),
+      'email': getUserEmail(),
+      'phone': getPhoneNumber(),
+      'profileImage': getUserProfileImagePath(),
+      'token': getUserToken(),
+      'lastLogin': getLastLogin(),
+    };
   }
+
+  // -------------------- Debug Methods --------------------
+  static void printAllStoredData() {
+    debugPrint('--- Storage Contents ---');
+    _prefs.getKeys().forEach((key) {
+      debugPrint('$key: ${_prefs.get(key)}');
+    });
+    debugPrint('------------------------');
+  }
+
+  static saveUserRole(userRole) {}
+
+  static saveUserPhone(userPhone) {}
 }

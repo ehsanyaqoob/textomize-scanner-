@@ -1,5 +1,6 @@
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:textomize/core/exports.dart';
+import 'package:textomize/core/storage_services.dart';
 import 'package:textomize/modules/features/home/navbar/account_view.dart';
 import 'package:textomize/modules/features/home/navbar/home_view.dart';
 import 'package:textomize/modules/features/home/navbar/smart_ai/smart_ai.dart';
@@ -49,7 +50,15 @@ class _NavBarNavigationState extends State<NavBarNavigation> {
         extendBody: true,
         appBar: _currentIndex == 0
             ? AppBar(
-                title: HomeAppBar(userName: 'Nufyll Abassi'),
+                title: FutureBuilder<String?>(
+                  future: Future.value(StorageService.getUserName()),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Text("Loading...");
+                    }
+                    return HomeAppBar(userName: snapshot.data ?? 'Guest');
+                  },
+                ),
                 automaticallyImplyLeading: false,
                 elevation: 0,
                 backgroundColor: Colors.transparent,
@@ -65,22 +74,38 @@ class _NavBarNavigationState extends State<NavBarNavigation> {
           unselectedItemColor: Colors.grey,
           items: [
             SalomonBottomBarItem(
-              icon: SvgPicture.asset(Assets.home, height: 24, color: _currentIndex == 0 ? AppColors.primaryColor : Colors.grey),
+              icon: SvgPicture.asset(Assets.home,
+                  height: 24,
+                  color: _currentIndex == 0
+                      ? AppColors.primaryColor
+                      : Colors.grey),
               title: Text("Home"),
               selectedColor: AppColors.primaryColor,
             ),
             SalomonBottomBarItem(
-              icon: SvgPicture.asset(Assets.ocr, height: 24, color: _currentIndex == 1 ? AppColors.primaryColor : Colors.grey),
+              icon: SvgPicture.asset(Assets.ocr,
+                  height: 24,
+                  color: _currentIndex == 1
+                      ? AppColors.primaryColor
+                      : Colors.grey),
               title: Text("MyDoc"),
               selectedColor: AppColors.primaryColor,
             ),
             SalomonBottomBarItem(
-              icon: SvgPicture.asset(Assets.network, height: 24, color: _currentIndex == 2 ? AppColors.primaryColor : Colors.grey),
+              icon: SvgPicture.asset(Assets.network,
+                  height: 24,
+                  color: _currentIndex == 2
+                      ? AppColors.primaryColor
+                      : Colors.grey),
               title: Text("Smart Ai"),
               selectedColor: AppColors.primaryColor,
             ),
             SalomonBottomBarItem(
-              icon: SvgPicture.asset(Assets.settings, height: 24, color: _currentIndex == 3 ? AppColors.primaryColor : Colors.grey),
+              icon: SvgPicture.asset(Assets.settings,
+                  height: 24,
+                  color: _currentIndex == 3
+                      ? AppColors.primaryColor
+                      : Colors.grey),
               title: Text("Settings"),
               selectedColor: AppColors.primaryColor,
             ),

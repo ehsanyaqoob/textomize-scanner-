@@ -11,7 +11,7 @@ class HomeAppBar extends StatelessWidget {
 
   const HomeAppBar({
     Key? key,
-    required this.userName,
+    this.userName = '',
     this.showGreeting = true,
   }) : super(key: key);
 

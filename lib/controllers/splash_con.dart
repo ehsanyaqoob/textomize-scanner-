@@ -1,6 +1,9 @@
 import 'package:get/get.dart';
 import 'package:textomize/core/exports.dart';
+import 'package:textomize/core/storage_services.dart';
 import 'dart:math';
+import '../modules/features/auth/signIn_view.dart';
+import '../modules/features/home/navbar/NavBar.dart';
 import '../modules/features/onboarding/boarding.dart';
 
 class SplashController extends GetxController with GetSingleTickerProviderStateMixin {
@@ -12,8 +15,12 @@ class SplashController extends GetxController with GetSingleTickerProviderStateM
   late AnimationController _animationController;
 
   @override
-  void onInit() {
+  void onInit() async {
     super.onInit();
+    
+    // Initialize StorageService if not already done
+    await StorageService.init();
+    
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 4),
@@ -28,11 +35,6 @@ class SplashController extends GetxController with GetSingleTickerProviderStateM
   void onClose() {
     _animationController.dispose();
     super.onClose();
-  }
-
-  void startAnimationAndNavigation() async {
-    await Future.delayed(const Duration(seconds: 1));
-    showLogo.value = true;
   }
 
   void startAnimation() async {
@@ -75,7 +77,30 @@ class SplashController extends GetxController with GetSingleTickerProviderStateM
     navigateToNextScreen();
   }
 
-  void navigateToNextScreen() {
-    Get.offAll(() => const Boarding());
+  Future<void> navigateToNextScreen() async {
+    // Check if it's the first launch (this will be true only once)
+    final isFirstLaunch = await StorageService.getFirstLaunchStatus();
+    
+    if (isFirstLaunch) {
+      // First time user - show onboarding and mark launch as complete
+      debugPrint('First launch - showing onboarding');
+      await StorageService.setFirstLaunchStatus(false);
+      Get.offAll(() => const Boarding());
+      return;
+    }
+    
+    // For all subsequent launches, check authentication status directly
+    final isLoggedIn = StorageService.isLoggedIn();
+    
+    if (isLoggedIn) {
+      // User is authenticated - go to home
+      debugPrint('User is logged in, navigating to home');
+      debugPrint('User data: ${StorageService.getUserData()}');
+      Get.offAll(() => NavBarNavigation());
+    } else {
+      // User needs to authenticate
+      debugPrint('User not logged in, navigating to sign in');
+      Get.offAll(() => SignInView());
+    }
   }
 }
