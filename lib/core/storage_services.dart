@@ -2,12 +2,23 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class StorageService {
   static late SharedPreferences _prefs;
+    static const _firstLaunchKey = 'is_first_launch';
+
 
   // -------------------- INIT --------------------
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
   }
 
+  static Future<bool> getFirstLaunchStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_firstLaunchKey) ?? true;
+  }
+
+  static Future<void> setFirstLaunchStatus(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_firstLaunchKey, value);
+  }
   // -------------------- Onboarding --------------------
   static Future<void> setOnboardingSeen(bool seen) async {
     await _prefs.setBool('onboarding_seen', seen);
