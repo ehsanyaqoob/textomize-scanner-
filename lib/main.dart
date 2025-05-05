@@ -61,7 +61,7 @@ Future<void> requestAllPermissions() async {
     Permission.camera,
     Permission.microphone,
     Permission.storage,
-    Permission.location,
+    Permission.manageExternalStorage,
   ];
 
   // Add iOS-specific permission if applicable 

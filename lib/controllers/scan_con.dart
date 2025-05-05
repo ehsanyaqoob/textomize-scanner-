@@ -116,6 +116,10 @@ import 'package:textomize/screens/scanned_doc_view.dart';
 import 'package:translator/translator.dart';
 import 'package:docx_template/docx_template.dart';
 import 'package:pdf/widgets.dart' as pw;
+import 'package:media_scanner/media_scanner.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
 
 class ScanDocumentController extends GetxController {
   final ImagePicker _picker = ImagePicker();
@@ -266,10 +270,38 @@ class ScanDocumentController extends GetxController {
 
  
   /// Save the extracted text as PDF
+  // Future<void> saveAsPDF() async {
+  //   isSaving.value = true;
+  //
+  //   final status = await Permission.manageExternalStorage.request();
+  //   if (!status.isGranted) {
+  //     isSaving.value = false;
+  //     Get.snackbar('Permission Denied', 'Storage permission is required');
+  //     return;
+  //   }
+  //
+  //   final pdf = pw.Document();
+  //   pdf.addPage(
+  //     pw.Page(
+  //       build: (pw.Context context) =>
+  //           pw.Text(extractedText.value, style: pw.TextStyle(fontSize: 14)),
+  //     ),
+  //   );
+  //
+  //   final dir = await getExternalStorageDirectory();
+  //   final path =
+  //       '${dir!.path}/scan_${DateTime.now().millisecondsSinceEpoch}.pdf';
+  //   final file = File(path);
+  //   await file.writeAsBytes(await pdf.save());
+  //
+  //   isSaving.value = false;
+  //   Get.snackbar('Saved', 'PDF saved at $path');
+  // }
+
   Future<void> saveAsPDF() async {
     isSaving.value = true;
 
-    final status = await Permission.storage.request();
+    final status = await Permission.manageExternalStorage.request();
     if (!status.isGranted) {
       isSaving.value = false;
       Get.snackbar('Permission Denied', 'Storage permission is required');
@@ -284,21 +316,24 @@ class ScanDocumentController extends GetxController {
       ),
     );
 
-    final dir = await getExternalStorageDirectory();
+    final downloadsDir = Directory('/storage/emulated/0/Download');
     final path =
-        '${dir!.path}/scan_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        '${downloadsDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.pdf';
     final file = File(path);
     await file.writeAsBytes(await pdf.save());
 
+    // Trigger media scan so it appears in Recent Files
+    await MediaScanner.loadMedia(path: path);
+
     isSaving.value = false;
-    Get.snackbar('Saved', 'PDF saved at $path');
+    Get.snackbar('Saved', 'PDF saved in Downloads');
   }
 
-  /// Save the extracted text as DOCX
+
   Future<void> saveAsDocx() async {
     isSaving.value = true;
 
-    final status = await Permission.storage.request();
+    final status = await Permission.manageExternalStorage.request();
     if (!status.isGranted) {
       isSaving.value = false;
       Get.snackbar('Permission Denied', 'Storage permission is required');
@@ -312,13 +347,45 @@ class ScanDocumentController extends GetxController {
     c.add(TextContent("body", extractedText.value));
 
     final generated = await docx.generate(c);
-    final dir = await getExternalStorageDirectory();
+
+    final downloadsDir = Directory('/storage/emulated/0/Download');
     final path =
-        '${dir!.path}/scan_${DateTime.now().millisecondsSinceEpoch}.docx';
+        '${downloadsDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.docx';
     final file = File(path);
     await file.writeAsBytes(generated!);
 
+    // Trigger media scan so it appears in Recent Files
+    await MediaScanner.loadMedia(path: path);
+
     isSaving.value = false;
-    Get.snackbar('Saved', 'Word file saved at $path');
+    Get.snackbar('Saved', 'Word file saved in Downloads');
   }
+
+  /// Save the extracted text as DOCX
+  // Future<void> saveAsDocx() async {
+  //   isSaving.value = true;
+  //
+  //   final status = await Permission.manageExternalStorage.request();
+  //   if (!status.isGranted) {
+  //     isSaving.value = false;
+  //     Get.snackbar('Permission Denied', 'Storage permission is required');
+  //     return;
+  //   }
+  //
+  //   final sample = await rootBundle.load('assets/template.docx');
+  //   final docx = await DocxTemplate.fromBytes(sample.buffer.asUint8List());
+  //
+  //   Content c = Content();
+  //   c.add(TextContent("body", extractedText.value));
+  //
+  //   final generated = await docx.generate(c);
+  //   final dir = await getExternalStorageDirectory();
+  //   final path =
+  //       '${dir!.path}/scan_${DateTime.now().millisecondsSinceEpoch}.docx';
+  //   final file = File(path);
+  //   await file.writeAsBytes(generated!);
+  //
+  //   isSaving.value = false;
+  //   Get.snackbar('Saved', 'Word file saved at $path');
+  // }
 }
