@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "152447606859",
+    "project_id": "textomize",
+    "storage_bucket": "textomize.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:152447606859:android:0e4928461356e64936edce",
+        "android_client_info": {
+          "package_name": "com.example.textomize"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqCJhMHlKm259fQzNHP7liCDTL7j6usiw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

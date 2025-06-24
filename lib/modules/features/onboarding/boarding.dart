@@ -75,7 +75,7 @@ class _BoardingState extends State<Boarding> {
                 activeDotColor: AppColors.primaryColor,
                 dotColor: Colors.grey.shade300,
                 dotHeight: 8,
-                dotWidth: 8,
+                dotWidth: 30,
                 spacing: 10,
                 activeDotScale: 1.5,
               ),

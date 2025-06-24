@@ -6,8 +6,101 @@ import '../../../../core/exports.dart';
 class OBESheetView extends GetView<OBESheetController> {
   OBESheetView({Key? key}) : super(key: key);
 
-final OBESheetController controller = Get.put(OBESheetController());
+  final OBESheetController controller = Get.put(OBESheetController());
   @override
+  // Widget build(BuildContext context) {
+  //   return Scaffold(
+  //     appBar: CustomAppBar(
+  //       title: 'OBE Sheet',
+  //       actions: [
+  //         IconButton(
+  //           icon: const Icon(Icons.info_outline, color: AppColors.white),
+  //           onPressed: () {
+  //             Get.defaultDialog(
+  //               title: "OBE Sheet Help",
+  //               content: const Text(
+  //                 "Upload your Excel file and specify the number of each assessment type. "
+  //                 "The system will process the data according to OBE standards.",
+  //               ),
+  //               textConfirm: "OK",
+  //               onConfirm: () => Get.back(),
+  //             );
+  //           },
+  //         ),
+  //       ],
+  //     ),
+  //     body: Obx(() {
+  //       if (controller.isLoading.value) {
+  //         return const Center(child: CustomLoader());
+  //       }
+  //
+  //       return SingleChildScrollView(
+  //         child: Padding(
+  //           padding: const EdgeInsets.all(16.0),
+  //           child: Column(
+  //             children: [
+  //               CustomText(
+  //                 textAlign: TextAlign.center,
+  //                 text: 'Choose the OBE sheet you want to work on',
+  //                 fontSize: 24.sp,
+  //                 fontWeight: FontWeight.bold,
+  //                 color: AppColors.primaryColor,
+  //               ),
+  //               10.height,
+  //               CustomButton(
+  //                 title: 'Create New OBE Sheet',
+  //                 fillColor: true,
+  //                 onTap: _openBottomSheet,
+  //                 topMargin: 100,
+  //               ),
+  //               10.height,
+  //               CustomButton(
+  //                 title: 'Create Existing OBE Sheet',
+  //                 fillColor: true,
+  //                 onTap: () {
+  //                   Fluttertoast.showToast(
+  //                     msg: "Feature not implemented yet.",
+  //                     backgroundColor: Colors.redAccent,
+  //                   );
+  //                 },
+  //               ),
+  //               20.height,
+  //
+  //               // Show details if filled
+  //               if (controller.dataFilled.value) ...[
+  //                 const Divider(),
+  //                 CustomText(
+  //                   text: "Excel File: ${controller.excelFileName.value}",
+  //                   fontSize: 16.sp,
+  //                   fontWeight: FontWeight.w500,
+  //                 ),
+  //                 8.height,
+  //                 CustomText(text: "Quizzes: ${controller.quizzes.value}"),
+  //                 CustomText(text: "Mid Exams: ${controller.mids.value}"),
+  //                 CustomText(text: "Final Exams: ${controller.finals.value}"),
+  //                 CustomText(text: "Practicals: ${controller.practicals.value}"),
+  //                 if (controller.extractedData.isNotEmpty) ...[
+  //                   8.height,
+  //                   CustomText(
+  //                     text: "Data Rows: ${controller.extractedData.length}",
+  //                     fontSize: 14.sp,
+  //                     color: AppColors.greyColor,
+  //                   ),
+  //                 ],
+  //                 20.height,
+  //                 CustomButton(
+  //                   title: "Generate OBE Sheet",
+  //                   fillColor: true,
+  //                   onTap: controller.generateOBESheet,
+  //                 ),
+  //               ]
+  //             ],
+  //           ),
+  //         ),
+  //       );
+  //     }),
+  //   );
+  // }
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CustomAppBar(
@@ -33,12 +126,42 @@ final OBESheetController controller = Get.put(OBESheetController());
         if (controller.isLoading.value) {
           return const Center(child: CustomLoader());
         }
-        
-        return SingleChildScrollView(
-          child: Padding(
+
+        return Center(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
+                // OBE GIF or Icon
+                Container(
+                  width: 220.w,
+                  height: 220.0.h,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.green.withOpacity(0.1),
+                        spreadRadius: 5,
+                        blurRadius: 10,
+                      ),
+                    ],
+                    border: Border.all(
+                      color: Colors.green.withOpacity(0.8),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(50.0),
+                    child: Image.asset(
+                      'assets/png/obe.png', // Replace with your actual GIF path
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Centered headline
                 CustomText(
                   textAlign: TextAlign.center,
                   text: 'Choose the OBE sheet you want to work on',
@@ -46,7 +169,9 @@ final OBESheetController controller = Get.put(OBESheetController());
                   fontWeight: FontWeight.bold,
                   color: AppColors.primaryColor,
                 ),
-                10.height,
+                const SizedBox(height: 30),
+
+                // Buttons
                 CustomButton(
                   title: 'Create New OBE Sheet',
                   fillColor: true,
@@ -65,7 +190,7 @@ final OBESheetController controller = Get.put(OBESheetController());
                 ),
                 20.height,
 
-                // Show details if filled
+                // If data filled, show summary and generate button
                 if (controller.dataFilled.value) ...[
                   const Divider(),
                   CustomText(
@@ -77,7 +202,8 @@ final OBESheetController controller = Get.put(OBESheetController());
                   CustomText(text: "Quizzes: ${controller.quizzes.value}"),
                   CustomText(text: "Mid Exams: ${controller.mids.value}"),
                   CustomText(text: "Final Exams: ${controller.finals.value}"),
-                  CustomText(text: "Practicals: ${controller.practicals.value}"),
+                  CustomText(
+                      text: "Practicals: ${controller.practicals.value}"),
                   if (controller.extractedData.isNotEmpty) ...[
                     8.height,
                     CustomText(
@@ -218,7 +344,6 @@ class OBEBottomSheet extends GetView<OBESheetController> {
                   }
                   return null;
                 },
-              
               ),
               const SizedBox(height: 10),
               CustomTextFormField(
@@ -350,7 +475,8 @@ class OBEPreviewView extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               CustomText(text: "Finals: ${args['finals']}"),
-                              CustomText(text: "Practicals: ${args['practicals']}"),
+                              CustomText(
+                                  text: "Practicals: ${args['practicals']}"),
                             ],
                           ),
                         ],
@@ -365,8 +491,10 @@ class OBEPreviewView extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          CustomText(text: "Original Rows: ${extractedData.length}"),
-                          CustomText(text: "Processed Rows: ${processedData.length}"),
+                          CustomText(
+                              text: "Original Rows: ${extractedData.length}"),
+                          CustomText(
+                              text: "Processed Rows: ${processedData.length}"),
                         ],
                       ),
                     ],
@@ -374,7 +502,7 @@ class OBEPreviewView extends StatelessWidget {
                 ),
               ),
               20.height,
-              
+
               // Data Preview Section
               CustomText(
                 text: "Processed Data Preview",
@@ -382,7 +510,7 @@ class OBEPreviewView extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
               10.height,
-              
+
               // Show a sample of the processed data
               if (processedData.isNotEmpty) ...[
                 Card(
@@ -392,7 +520,8 @@ class OBEPreviewView extends StatelessWidget {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
-                        columns: _buildColumns(processedData.first.keys.toList()),
+                        columns:
+                            _buildColumns(processedData.first.keys.toList()),
                         rows: _buildRows(processedData.take(5).toList()),
                       ),
                     ),
@@ -405,7 +534,7 @@ class OBEPreviewView extends StatelessWidget {
                   color: AppColors.greyColor,
                 ),
               ],
-              
+
               20.height,
               Row(
                 children: [

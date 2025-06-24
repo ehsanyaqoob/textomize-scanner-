@@ -2,8 +2,10 @@ import 'package:textomize/core/exports.dart';
 
 class AppColors {
     AppColors._();
-  static const Color primaryColor =  Colors.blue;
-  static const Color secondaryColor = Color.fromARGB(255, 94, 101, 179);
+  // static const Color primaryColor =  Colors.blue;
+    static const Color primaryColor = Color(0xFF1A012C);
+    static const Color secondaryColor = Color(0xFF600010);
+    // static const Color secondaryColor = Color.fromARGB(255, 94, 101, 179);
   static const Color scaffoldBackgroundColor = Color(0xFFFFFFFF);
 
 // Existing colors (you can modify the names and colors here)

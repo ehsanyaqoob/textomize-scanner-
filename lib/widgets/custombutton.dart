@@ -33,7 +33,7 @@ class CustomButton extends StatelessWidget {
             color: fillColor
                 ? onTap == null
                 ? Colors.grey
-                : AppColors.buttonColor
+                : AppColors.primaryColor
                 : Colors.white,
           ),
           child: Center(
