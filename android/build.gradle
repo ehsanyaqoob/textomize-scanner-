@@ -1,13 +1,19 @@
 buildscript {
+    ext.kotlin_version = '1.8.22' // Use latest stable Kotlin version (check https://kotlinlang.org/)
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.0.2' // or your current version
-        classpath 'com.google.gms:google-services:4.3.15' // ✅ Required for Firebase
+        classpath 'com.android.tools.build:gradle:8.0.2' // Android Gradle Plugin (AGP)
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version" // ⚠️ Missing Kotlin plugin
+        classpath 'com.google.gms:google-services:4.3.15' // Firebase/Google Services
     }
 }
+
+
+
+
 
 allprojects {
     repositories {
@@ -16,7 +22,7 @@ allprojects {
     }
 }
 
-rootProject.buildDir = "../build"
+rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }

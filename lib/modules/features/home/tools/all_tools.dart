@@ -27,7 +27,7 @@ class _AllToolsViewState extends State<AllToolsView> {
   {
     'label': 'Scan QR',
     'icon': Icons.qr_code,
-    'view': () => OBESheetView(),
+    'view': () => OBECLOView(),
   },
   {
     'label': 'Translate Text',

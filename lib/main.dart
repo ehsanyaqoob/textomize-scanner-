@@ -7,8 +7,9 @@ import 'core/storage_services.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
+
   WidgetsFlutterBinding.ensureInitialized();
-  await StorageService.init();
+await StorageService.init();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );

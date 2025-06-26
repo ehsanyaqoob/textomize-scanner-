@@ -1,11 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'exports.dart';
 
 class StorageService {
   static late SharedPreferences _prefs;
-  
-  // Keys
+
+  // -------------------- Keys --------------------
   static const _firstLaunchKey = 'is_first_launch';
   static const _onboardingSeenKey = 'onboarding_seen';
   static const _loggedInKey = 'is_logged_in';
@@ -20,7 +21,7 @@ class StorageService {
   // -------------------- Initialization --------------------
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
-    debugPrint('StorageService initialized');
+    debugPrint('✅ StorageService initialized');
   }
 
   // -------------------- First Launch --------------------
@@ -49,17 +50,17 @@ class StorageService {
     if (value) {
       await _prefs.setInt(_lastLoginKey, DateTime.now().millisecondsSinceEpoch);
     }
-    debugPrint('Logged in status set to: $value');
+    debugPrint('🔐 Logged in status set to: $value');
   }
 
   static bool isLoggedIn() {
     return _prefs.getBool(_loggedInKey) ?? false;
   }
 
-  // -------------------- User Profile Data --------------------
+  // -------------------- User Profile Image --------------------
   static Future<void> saveUserProfileImagePath(String path) async {
-    await _prefs.setString(_profileImageKey, path);
-    debugPrint('Profile image path saved: $path');
+    await _prefs.setString(_profileImageKey, path.trim());
+    debugPrint('🖼️ Profile image path saved: $path');
   }
 
   static String? getUserProfileImagePath() {
@@ -68,13 +69,13 @@ class StorageService {
 
   static Future<void> removeUserProfileImagePath() async {
     await _prefs.remove(_profileImageKey);
-    debugPrint('Profile image path removed');
+    debugPrint('🧹 Profile image path removed');
   }
 
   // -------------------- User Token --------------------
   static Future<void> saveUserToken(String token) async {
-    await _prefs.setString(_tokenKey, token);
-    debugPrint('User token saved');
+    await _prefs.setString(_tokenKey, token.trim());
+    debugPrint('🔑 User token saved');
   }
 
   static String? getUserToken() {
@@ -90,29 +91,42 @@ class StorageService {
     String? profileImage,
     String? token,
   }) async {
+    debugPrint('📦 Saving user details...');
+    debugPrint('   ID: $id');
+    debugPrint('   Name: "$name"');
+    debugPrint('   Email: $email');
+
     await Future.wait([
       saveUserId(id),
       saveUserName(name),
       saveUserEmail(email),
-      if (phone != null) savePhoneNumber(phone),
-      if (profileImage != null) saveUserProfileImagePath(profileImage),
-      if (token != null) saveUserToken(token),
+      if (phone != null && phone.trim().isNotEmpty) savePhoneNumber(phone),
+      if (profileImage != null && profileImage.trim().isNotEmpty)
+        saveUserProfileImagePath(profileImage),
+      if (token != null && token.trim().isNotEmpty) saveUserToken(token),
     ]);
-    debugPrint('User details saved for: $email');
+
+    debugPrint('✅ User details saved for: $email');
   }
 
   static Future<void> saveUserName(String name) async {
-    await _prefs.setString(_nameKey, name);
-    debugPrint('User name saved: $name');
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) {
+      debugPrint('🚫 User name not saved: value is empty');
+      return;
+    }
+    await _prefs.setString(_nameKey, trimmed);
+    debugPrint('👤 User name saved: $trimmed');
   }
 
   static String? getUserName() {
-    return _prefs.getString(_nameKey);
+    final name = _prefs.getString(_nameKey);
+    return (name != null && name.trim().isNotEmpty) ? name : null;
   }
 
   static Future<void> saveUserEmail(String email) async {
-    await _prefs.setString(_emailKey, email);
-    debugPrint('User email saved: $email');
+    await _prefs.setString(_emailKey, email.trim());
+    debugPrint('📧 User email saved: $email');
   }
 
   static String? getUserEmail() {
@@ -120,8 +134,8 @@ class StorageService {
   }
 
   static Future<void> saveUserId(String id) async {
-    await _prefs.setString(_userIdKey, id);
-    debugPrint('User ID saved: $id');
+    await _prefs.setString(_userIdKey, id.trim());
+    debugPrint('🆔 User ID saved: $id');
   }
 
   static String? getUserId() {
@@ -129,8 +143,8 @@ class StorageService {
   }
 
   static Future<void> savePhoneNumber(String phone) async {
-    await _prefs.setString(_phoneKey, phone);
-    debugPrint('Phone number saved: $phone');
+    await _prefs.setString(_phoneKey, phone.trim());
+    debugPrint('📱 Phone number saved: $phone');
   }
 
   static String? getPhoneNumber() {
@@ -148,18 +162,20 @@ class StorageService {
       _prefs.remove(_userIdKey),
       _prefs.remove(_phoneKey),
     ]);
-    debugPrint('User session cleared');
+    debugPrint('🚫 User session cleared');
   }
 
   static Future<void> logOut() async {
     await clearSession();
-    debugPrint('User logged out');
+    debugPrint('🚪 User logged out');
   }
 
   // -------------------- Last Login Timestamp --------------------
   static DateTime? getLastLogin() {
     final timestamp = _prefs.getInt(_lastLoginKey);
-    return timestamp != null ? DateTime.fromMillisecondsSinceEpoch(timestamp) : null;
+    return timestamp != null
+        ? DateTime.fromMillisecondsSinceEpoch(timestamp)
+        : null;
   }
 
   // -------------------- Generic Methods --------------------
@@ -198,7 +214,7 @@ class StorageService {
   // -------------------- User Data Bundle --------------------
   static Map<String, dynamic>? getUserData() {
     if (!isLoggedIn()) return null;
-    
+
     return {
       'id': getUserId(),
       'name': getUserName(),
@@ -210,16 +226,21 @@ class StorageService {
     };
   }
 
-  // -------------------- Debug Methods --------------------
+  // -------------------- Debug Helper --------------------
   static void printAllStoredData() {
-    debugPrint('--- Storage Contents ---');
-    _prefs.getKeys().forEach((key) {
+    debugPrint('--- 📦 Storage Contents ---');
+    for (var key in _prefs.getKeys()) {
       debugPrint('$key: ${_prefs.get(key)}');
-    });
-    debugPrint('------------------------');
+    }
+    debugPrint('---------------------------');
   }
 
-  static saveUserRole(userRole) {}
+  // -------------------- Placeholders --------------------
+  static void saveUserRole(dynamic userRole) {
+    // You can implement this when needed
+  }
 
-  static saveUserPhone(userPhone) {}
+  static void saveUserPhone(dynamic userPhone) {
+    // You can implement this when needed
+  }
 }

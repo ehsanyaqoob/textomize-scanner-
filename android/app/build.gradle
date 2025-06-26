@@ -1,3 +1,51 @@
+// plugins {
+//     id "com.android.application"
+//     id "org.jetbrains.kotlin.android" // ✅ Fixed Kotlin plugin ID (new syntax)
+//     id "com.google.gms.google-services" // Firebase
+//     id "dev.flutter.flutter-gradle-plugin" // Must be last
+// }
+
+// android {
+//     namespace "com.example.textomize"
+//     compileSdk 35
+//     ndkVersion flutter.ndkVersion
+
+//     compileOptions {
+//         sourceCompatibility JavaVersion.VERSION_1_8
+//         targetCompatibility JavaVersion.VERSION_1_8
+//     }
+
+//     kotlinOptions {
+//         jvmTarget = '1.8'
+//     }
+
+//     defaultConfig {
+//         applicationId "com.example.textomize"
+//         minSdk 27
+//         targetSdk 35
+//         versionCode flutter.versionCode.toInteger() // ✅ Ensure versionCode is Int
+//         versionName flutter.versionName
+//     }
+
+//     buildTypes {
+//         release {
+//             minifyEnabled false
+//             shrinkResources false
+//             signingConfig signingConfigs.debug
+//         }
+//     }
+// }
+
+// flutter {
+//     source '../..'
+// }
+
+// dependencies {
+//     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22" // ✅ Explicit Kotlin dependency
+//     implementation platform('com.google.firebase:firebase-bom:32.7.0') // Firebase BoM (if using Firebase)
+// }
+
+
 plugins {
     id "com.android.application"
     // START: FlutterFire Configuration
@@ -38,7 +86,7 @@ android {
              minifyEnabled false
             shrinkResources false
             // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
+            // Signing with the debug keys for now, so flutter run --release works.
             signingConfig = signingConfigs.debug
         }
     }

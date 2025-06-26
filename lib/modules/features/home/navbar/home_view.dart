@@ -14,7 +14,7 @@ import '../../../../core/exports.dart';
 import '../../../../core/storage_services.dart';
 import '../../../../models/tool_model.dart';
 import '../tools/tools_section.dart';
-import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+// import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class HomeView extends StatefulWidget {
   @override
@@ -50,8 +50,14 @@ class _HomeViewState extends State<HomeView> {
 
   void loadUserData() {
     setState(() {
+        StorageService.printAllStoredData(); // 🔍 Show all keys
       userName = StorageService.getUserName() ?? '';
       fullName = StorageService.getUserName() ?? '';
+        debugPrint('Fetched Name from SharedPrefs: $userName');
+        debugPrint('Fetched Full Name from SharedPrefs: $fullName');
+      userName = userName.isNotEmpty ? userName : 'User'; 
+      fullName = fullName.isNotEmpty ? fullName : 'User';
+      
     });
   }
 
@@ -132,9 +138,9 @@ class _HomeViewState extends State<HomeView> {
                     ],
                   ),
                 ),
-                Expanded(
-                  child: SfPdfViewer.file(File(path)),
-                ),
+                // Expanded(
+                //   child: SfPdfViewer.file(File(path)),
+                // ),
               ],
             ),
           ),

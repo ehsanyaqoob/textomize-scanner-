@@ -86,33 +86,34 @@ class SignInController extends GetxController {
       debugPrint('Error fetching user profile: $e');
       return null;
     }
-  }
-
-  /// Saves user details into SharedPreferences
+  } 
   Future<void> _saveUserDetails(User user, Map<String, dynamic>? userData) async {
-    debugPrint('Saving user details to SharedPreferences...');
+  debugPrint('Saving user details to SharedPreferences...');
 
-    final userName = userData?['name'] ?? user.displayName ?? '';
-    final userEmail = user.email ?? '';
-    final userId = user.uid;
-    final userRole = userData?['role'] ?? '';
-    final userPhone = userData?['phone'] ?? '';
+  // 🔍 Full raw print
+  debugPrint('🔥 Raw Firestore user data: $userData');
 
-    debugPrint('UserName: $userName');
-    debugPrint('UserEmail: $userEmail');
-    debugPrint('UserId: $userId');
-    debugPrint('UserRole: $userRole');
-    debugPrint('UserPhone: $userPhone');
+  String? rawName = userData != null && userData.containsKey('name') ? userData['name'] : user.displayName;
+  final userName = (rawName != null && rawName.trim().isNotEmpty) ? rawName.trim() : 'Guest';
 
-    await StorageService.setLoggedIn(true);
-    await StorageService.saveUserName(userName);
-    await StorageService.saveUserEmail(userEmail);
-    await StorageService.saveUserId(userId);
-    await StorageService.saveUserRole(userRole);      // You'll need to add this in StorageService
-    await StorageService.saveUserPhone(userPhone);    // Add this too
+  final userEmail = user.email ?? '';
+  final userId = user.uid;
+  final userRole = userData?['role'] ?? '';
+  final userPhone = userData?['phone'] ?? '';
 
-    debugPrint('✅ All user details saved in SharedPreferences');
-  }
+  debugPrint('UserName: "$userName"');
+  debugPrint('UserEmail: $userEmail');
+  debugPrint('UserId: $userId');
+  debugPrint('UserRole: $userRole');
+  debugPrint('UserPhone: $userPhone');
+
+  await StorageService.setLoggedIn(true);
+  await StorageService.saveUserName(userName);
+  await StorageService.saveUserEmail(userEmail);
+  await StorageService.saveUserId(userId);
+
+  debugPrint('✅ All user details saved in SharedPreferences');
+}
 
   /// Navigates to the home screen
   void _navigateToHome() {

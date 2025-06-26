@@ -12,7 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
 #  syncfusion_flutter_pdfviewer: ^24.1.41
-  syncfusion_flutter_pdfviewer: ^29.1.41
+  #syncfusion_flutter_pdfviewer: 29.1.38
   cupertino_icons: ^1.0.8
   svg_flutter: ^0.0.1
   get: ^4.6.6
@@ -54,6 +54,8 @@ dependencies:
 
   cloud_firestore: ^5.6.7
   firebase_auth: ^5.5.3
+  # syncfusion_flutter_xlsio: 29.1.37
+
 
 dev_dependencies:
   flutter_test:

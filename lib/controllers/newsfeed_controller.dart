@@ -1,6 +1,5 @@
-import 'package:textomize/core/exports.dart';
+import 'package:get/get.dart';
 import 'package:textomize/core/storage_services.dart';
-
 
 class NewsFeedController extends GetxController {
   var userName = ''.obs;

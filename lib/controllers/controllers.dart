@@ -134,7 +134,7 @@ class ProfileController extends GetxController {
 
 final List<Map<String, dynamic>> tools = [
   {'label': 'Scan Doc', 'icon': Icons.document_scanner, 'view': ScanDocumentView()},
-  {'label': 'OBE Sheet ', 'icon': Icons.document_scanner_outlined, 'view': OBESheetView()},
+  {'label': 'OBE Sheet ', 'icon': Icons.document_scanner_outlined, 'view': OBECLOView()},
   {'label': 'Translate Text', 'icon': Icons.translate, 'view': TranslateTextView()},
   {'label': 'Extract Text', 'icon': Icons.splitscreen, 'view': ExtractTextView()},
   {'label': 'Merge PDF', 'icon': Icons.merge_type, 'view': MergePDFView()},

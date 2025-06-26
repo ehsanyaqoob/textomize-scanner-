@@ -1,10 +1,13 @@
+import 'package:textomize/controllers/newsfeed_controller.dart';
 import 'package:textomize/core/exports.dart';
 
 class InfoCard extends StatelessWidget {
+  final controller = Get.put(NewsFeedController());
+
   final String username;
   final String fullName;
 
-  const InfoCard({
+   InfoCard({
     Key? key,
     required this.username,
     required this.fullName,

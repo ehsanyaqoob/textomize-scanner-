@@ -19,13 +19,13 @@ class AuthService {
         email: email,
         password: password,
       );
-      debugPrint('User signed up successfully: ${userCredential.user?.uid}');
+      debugPrint('✅ User signed up: ${userCredential.user?.uid}');
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      debugPrint('SignUp Error (${e.code}): ${e.message}');
+      debugPrint('❌ SignUp Error (${e.code}): ${e.message}');
       throw AuthException(e.code, e.message ?? 'An error occurred during sign up');
     } catch (e) {
-      debugPrint('Unexpected error in signUp: $e');
+      debugPrint('❌ Unexpected error in signUp: $e');
       throw AuthException('unknown-error', 'An unexpected error occurred');
     }
   }
@@ -36,12 +36,12 @@ class AuthService {
     required String name,
     required String phone,
     required String email,
-    Map<String, dynamic>? additionalData, // Allow storing extra data
+    Map<String, dynamic>? additionalData,
   }) async {
     try {
-      debugPrint('Saving user data to Firestore for UID: $uid');
+      debugPrint('📤 Saving user data to Firestore for UID: $uid');
       await _firestore.collection('users').doc(uid).set({
-        'uid': uid, // ✅ Always good to store UID in doc data too
+        'uid': uid,
         'name': name,
         'phone': phone,
         'email': email,
@@ -49,23 +49,23 @@ class AuthService {
         'updatedAt': FieldValue.serverTimestamp(),
         if (additionalData != null) ...additionalData,
       });
-      debugPrint('User data saved successfully');
+      debugPrint('✅ Firestore user data saved');
     } catch (e) {
-      debugPrint('Error saving user data: $e');
+      debugPrint('❌ Error saving user data: $e');
       throw AuthException('firestore-save-failed', 'Failed to save user data');
     }
   }
 
-  // 🔑 Sign Up & Save Data (helper method)
+  // 🔁 Sign Up and Save Firestore User
   Future<UserCredential> signUpAndSaveUser({
     required String email,
     required String password,
     required String name,
     required String phone,
-    Map<String, dynamic>? additionalData, // Optional additional data
+    Map<String, dynamic>? additionalData,
   }) async {
     try {
-      debugPrint('Starting complete sign up process for: $email');
+      debugPrint('🔄 Starting complete sign up process for: $email');
       final userCredential = await signUp(email, password);
 
       if (userCredential.user == null) {
@@ -80,10 +80,10 @@ class AuthService {
         additionalData: additionalData,
       );
 
-      debugPrint('Sign up and user data save completed successfully');
+      debugPrint('✅ Sign up + Firestore save completed');
       return userCredential;
     } catch (e) {
-      debugPrint('Error in signUpAndSaveUser: $e');
+      debugPrint('❌ Error in signUpAndSaveUser: $e');
       rethrow;
     }
   }
@@ -91,24 +91,23 @@ class AuthService {
   // 🔑 Sign In with Email & Password
   Future<UserCredential> signIn(String email, String password) async {
     try {
-      debugPrint('Attempting to sign in user: $email');
+      debugPrint('🔐 Signing in user: $email');
       final userCredential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       if (userCredential.user?.emailVerified == false) {
-        debugPrint('User email not verified for: $email');
         throw AuthException('email-not-verified', 'Please verify your email before signing in');
       }
 
-      debugPrint('User signed in successfully: ${userCredential.user?.uid}');
+      debugPrint('✅ User signed in: ${userCredential.user?.uid}');
       return userCredential;
     } on FirebaseAuthException catch (e) {
-      debugPrint('SignIn Error (${e.code}): ${e.message}');
-      throw AuthException(e.code, e.message ?? 'An error occurred during sign in');
+      debugPrint('❌ SignIn Error (${e.code}): ${e.message}');
+      throw AuthException(e.code, e.message ?? 'Authentication failed');
     } catch (e) {
-      debugPrint('Unexpected error in signIn: $e');
+      debugPrint('❌ Unexpected error in signIn: $e');
       throw AuthException('unknown-error', 'An unexpected error occurred');
     }
   }
@@ -116,11 +115,11 @@ class AuthService {
   // 🔒 Sign Out
   Future<void> signOut() async {
     try {
-      debugPrint('Signing out user');
+      debugPrint('🚪 Signing out user');
       await _auth.signOut();
-      debugPrint('User signed out successfully');
+      debugPrint('✅ User signed out');
     } catch (e) {
-      debugPrint('Error signing out: $e');
+      debugPrint('❌ Error signing out: $e');
       throw AuthException('signout-failed', 'Failed to sign out');
     }
   }
@@ -128,7 +127,7 @@ class AuthService {
   // 👤 Get Current User
   User? getCurrentUser() {
     final user = _auth.currentUser;
-    debugPrint('Current user: ${user?.uid}');
+    debugPrint('👤 Current user: ${user?.uid}');
     return user;
   }
 
@@ -137,12 +136,12 @@ class AuthService {
     try {
       final user = _auth.currentUser;
       if (user != null && !user.emailVerified) {
-        debugPrint('Sending email verification to: ${user.email}');
+        debugPrint('📧 Sending verification to: ${user.email}');
         await user.sendEmailVerification();
-        debugPrint('Email verification sent');
+        debugPrint('✅ Email verification sent');
       }
     } catch (e) {
-      debugPrint('Error sending verification email: $e');
+      debugPrint('❌ Verification email error: $e');
       throw AuthException('verification-failed', 'Failed to send verification email');
     }
   }
@@ -150,11 +149,11 @@ class AuthService {
   // 🔑 Reset Password
   Future<void> sendPasswordResetEmail(String email) async {
     try {
-      debugPrint('Sending password reset email to: $email');
+      debugPrint('🔁 Sending password reset to: $email');
       await _auth.sendPasswordResetEmail(email: email);
-      debugPrint('Password reset email sent');
+      debugPrint('✅ Password reset email sent');
     } on FirebaseAuthException catch (e) {
-      debugPrint('Password reset error (${e.code}): ${e.message}');
+      debugPrint('❌ Password reset error (${e.code}): ${e.message}');
       throw AuthException(e.code, e.message ?? 'Failed to send reset email');
     }
   }
@@ -164,26 +163,26 @@ class AuthService {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        debugPrint('Deleting user account: ${user.uid}');
+        debugPrint('🗑 Deleting user: ${user.uid}');
         await user.delete();
-        debugPrint('User account deleted');
+        debugPrint('✅ User account deleted');
       }
     } catch (e) {
-      debugPrint('Error deleting account: $e');
+      debugPrint('❌ Delete account error: $e');
       throw AuthException('delete-failed', 'Failed to delete account');
     }
   }
 
-  // 🔒 Stream to listen to auth state changes
+  // 🔒 Listen to auth state changes
   Stream<User?> authStateChanges() {
-    debugPrint('Setting up auth state changes stream');
+    debugPrint('🔍 Listening to auth state changes');
     return _auth.authStateChanges();
   }
 
-  // 🔎 Fetch All Users Info
+  // 🔍 Fetch all users from Firestore
   Future<List<Map<String, dynamic>>> fetchAllUsers() async {
     try {
-      debugPrint('Fetching all users from Firestore...');
+      debugPrint('📥 Fetching all users from Firestore...');
       final querySnapshot = await _firestore.collection('users').get();
 
       final users = querySnapshot.docs.map((doc) {
@@ -193,16 +192,16 @@ class AuthService {
         };
       }).toList();
 
-      debugPrint('Fetched ${users.length} users.');
+      debugPrint('✅ Fetched ${users.length} users');
       return users;
     } catch (e) {
-      debugPrint('Error fetching users: $e');
+      debugPrint('❌ Error fetching users: $e');
       throw AuthException('fetch-users-failed', 'Failed to fetch users');
     }
   }
 }
 
-// ✅ Custom Exception for cleaner error handling
+// ✅ Custom Auth Exception
 class AuthException implements Exception {
   final String code;
   final String message;
