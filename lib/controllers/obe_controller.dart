@@ -1,480 +1,480 @@
+// obe_clo_controller.dart
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:excel/excel.dart';
 import 'package:file_picker/file_picker.dart';
-
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 import '../core/exports.dart';
 
 class OBECLOSheetController extends GetxController {
   // Course Information
   var courseName = ''.obs;
   var courseCode = ''.obs;
-  
+
   // File Handling
   var excelFileName = ''.obs;
   Uint8List? excelBytes;
   var isLoading = false.obs;
   var dataReady = false.obs;
-  
+  var selectedAssessmentType = ''.obs;
+
   // Data Storage
   var assessmentWeights = <String, double>{}.obs;
   var cloData = <CLO>[].obs;
   var studentRecords = <StudentRecord>[].obs;
+  var studentPreviewData = <StudentRecord>[].obs;
 
   @override
   void onInit() {
     super.onInit();
     // Initialize with default weights
     assessmentWeights.value = {
-      'Quiz': 0.2,
-      'Mid': 0.3,
-      'Final': 0.4,
-      'Practical': 0.1,
+      'Quiz 1': 0.1,
+      'Quiz 2': 0.1,
+      'Assignment 1': 0.15,
+      'Assignment 2': 0.15,
+      'Mid Term': 0.2,
+      'Final Term': 0.3,
     };
   }
 
-  Future<void> loadAssessmentData(FilePickerResult? result) async {
-    if (result == null) {
-      showError("No file selected");
-      return;
-    }
-
+  // Load assessment data from Excel file
+  Future<void> loadAssessmentData(FilePickerResult result) async {
     try {
       isLoading(true);
-      final file = result.files.first;
-      if (file.bytes == null) throw Exception("Empty file");
+      excelBytes = result.files.first.bytes;
+      excelFileName.value = result.files.first.name;
 
-      excelFileName.value = file.name;
-      excelBytes = file.bytes;
-      await _parseExcelData(file.bytes!);
+      debugPrint('Loading Excel file: ${excelFileName.value}');
+      final excel = Excel.decodeBytes(excelBytes!);
 
-      dataReady.value = validateDataIntegrity();
-
-      if (dataReady.value) {
-        showSuccess("Data loaded successfully");
-      } else {
-        showError("Missing required data fields");
+      if (excel.tables.isEmpty) {
+        throw Exception("No sheets found in Excel file");
       }
-    } catch (e) {
-      clearData();
-      showError("Error parsing file: ${e.toString()}");
-    } finally {
-      isLoading(false);
-    }
-  }
+ 
+      final sheet = excel.tables.values.first;
+      debugPrint('Found sheet with ${sheet.rows.length} rows');
 
-  Future<void> loadAssessmentDataFromBytes(Uint8List bytes) async {
-    try {
-      isLoading(true);
-      await _parseExcelData(bytes);
-      dataReady.value = validateDataIntegrity();
-    } catch (e) {
-      clearData();
-      showError("Error parsing file: ${e.toString()}");
-    } finally {
-      isLoading(false);
-    }
-  }
+      final headers = sheet.rows.first.map((cell) => cell?.value?.toString()?.trim()).toList();
+      debugPrint('Headers: $headers');
 
-  bool validateDataIntegrity() {
-  // Auto-normalize weights if sum ≠ 1
-  final totalWeight = assessmentWeights.values.fold(0.0, (a, b) => a + b);
-  if (totalWeight > 0 && (totalWeight - 1.0).abs() > 0.001) {
-    final factor = 1.0 / totalWeight;
-    assessmentWeights.updateAll((key, value) => value * factor);
-  }
-  
-  // If no weights specified, create default equal distribution
-  if (assessmentWeights.isEmpty && cloData.isNotEmpty) {
-    final weight = 1.0 / cloData.length;
-    for (final clo in cloData) {
-      assessmentWeights[clo.code] = weight;
-    }
-  }
-
-  return courseName.value.isNotEmpty && 
-         courseCode.value.isNotEmpty && 
-         (cloData.isNotEmpty || studentRecords.isNotEmpty);
-}
-
-  Future<void> _parseExcelData(Uint8List bytes) async {
-    try {
-      final excel = Excel.decodeBytes(bytes);
-      if (excel.tables.isEmpty) throw Exception("No sheets found");
-
-      final sheet = excel.tables.values.firstWhere(
-        (table) => table.rows.length > 1,
-        orElse: () => throw Exception("No valid data sheet found"),
-      );
-
-      final headers = sheet.rows.first.map((cell) => cell?.value?.toString().trim()).toList();
-      _validateRequiredColumns(headers);
-      _parseCLOsFromHeaders(headers);
       studentRecords.assignAll(_parseStudentRecords(sheet.rows.sublist(1), headers));
+      debugPrint('Parsed ${studentRecords.length} student records');
+
+      dataReady.value = true;
+      showSuccess("File loaded successfully with ${studentRecords.length} students");
     } catch (e) {
-      throw Exception("Failed to parse Excel data: ${e.toString()}");
+      debugPrint('Error loading assessment data: $e');
+      showError("Failed to load Excel file: ${e.toString()}");
+      dataReady.value = false;
+    } finally {
+      isLoading(false);
     }
   }
 
+  List<StudentRecord> _parseStudentRecords(List<List<Data?>> rows, List<String?> headers) {
+    debugPrint('Parsing student records...');
+    final records = <StudentRecord>[];
 
-void _validateRequiredColumns(List<String?> headers) {
-  final cleaned = headers.map((e) => e?.trim().toLowerCase()).toList();
-  
-  // Make regno and name optional with default values
-  if (!cleaned.contains('regno')) {
-    debugPrint("Warning: 'regno' column not found - will generate placeholder IDs");
-  }
-  if (!cleaned.contains('name')) {
-    debugPrint("Warning: 'name' column not found - will use placeholder names");
-  }
+    for (int i = 0; i < rows.length; i++) {
+      try {
+        final row = rows[i];
+        final record = StudentRecord();
 
-  // Check for at least one assessment column (CLO or other)
-  final hasAssessmentColumns = cleaned.any((h) => 
-      h?.startsWith('clo') ?? false || 
-      ['quiz', 'mid', 'final', 'practical'].any((a) => h?.contains(a) ?? false));
-  
-  if (!hasAssessmentColumns) {
-    throw Exception("No assessment columns found (expected CLOs or assessment types)");
-  }
-}
+        for (int j = 0; j < headers.length; j++) {
+          final header = headers[j]?.trim() ?? '';
+          final value = row.length > j ? row[j]?.value?.toString()?.trim() : '';
 
+          if (header.isEmpty) continue;
 
- void _parseCLOsFromHeaders(List<String?> headers) {
-  cloData.clear();
-  final cloHeaders = headers.where((h) => h?.toLowerCase().trim().startsWith('clo') ?? false);
-
-  for (final header in cloHeaders) {
-    if (header != null) {
-      cloData.add(CLO(
-        code: header.trim(),
-        description: '',
-        target: 70.0,
-        weight: 1.0 / cloHeaders.length,
-      ));
-    }
-  }
-}
-
-List<StudentRecord> _parseStudentRecords(List<List<Data?>> rows, List<String?> headers) {
-  return rows.asMap().entries.map((entry) {
-    final index = entry.key;
-    final row = entry.value;
-    final record = StudentRecord();
-    
-    try {
-      for (int i = 0; i < headers.length; i++) {
-        final headerRaw = headers[i];
-        final value = row.length > i ? row[i]?.value : null;
-        if (headerRaw == null) continue;
-
-        final header = headerRaw.trim();
-        final lowerHeader = header.toLowerCase();
-        final stringVal = value?.toString().trim() ?? '';
-
-        // Flexible column handling
-        if (lowerHeader.contains('regno') ){
-          record.regNo = stringVal.isNotEmpty ? stringVal : 'ID_${index + 1}';
-        } else if (lowerHeader.contains('name')) {
-          record.name = stringVal.isNotEmpty ? stringVal : 'Student ${index + 1}';
-        } else if (lowerHeader.startsWith('clo')) {
-          record.cloScores[header] = double.tryParse(stringVal) ?? 0;
-        } else {
-          // Auto-detect assessment types
-          if (lowerHeader.contains('quiz') || 
-              lowerHeader.contains('mid') || 
-              lowerHeader.contains('final') || 
-              lowerHeader.contains('practical')) {
-            record.quizScores[header] = double.tryParse(stringVal) ?? 0;
-            // Auto-add to weights if not present
-            final type = _detectAssessmentType(header);
-            assessmentWeights.putIfAbsent(type, () => 0.0);
+          if (header.toLowerCase().contains('regno')) {
+            record.regNo = value?.isNotEmpty == true ? value! : 'ID_${i + 1}';
+          } else if (header.toLowerCase().contains('name')) {
+            record.name = value?.isNotEmpty == true ? value! : 'Student ${i + 1}';
+          } else if (header.toLowerCase().contains('quiz')) {
+            final marks = double.tryParse(value ?? '0') ?? 0;
+            record.quizScores[header] = marks;
+          } else if (header.toLowerCase().contains('assignment')) {
+            final marks = double.tryParse(value ?? '0') ?? 0;
+            record.assignmentScores[header] = marks;
+          } else if (header.toLowerCase().contains('mid') || 
+                     header.toLowerCase().contains('final')) {
+            final marks = double.tryParse(value ?? '0') ?? 0;
+            record.examScores[header] = marks;
           }
         }
+
+        if (record.regNo.isNotEmpty) {
+          records.add(record);
+        }
+      } catch (e) {
+        debugPrint('Error parsing row $i: $e');
       }
-
-      return record;
-    } catch (e) {
-      debugPrint("Row error: ${e.toString()}");
-      return StudentRecord()..regNo = 'ID_${index + 1}';
     }
-  }).where((s) => s.regNo.isNotEmpty).toList();
-}
 
-String _detectAssessmentType(String header) {
-  final lowerHeader = header.toLowerCase();
-  if (lowerHeader.contains('quiz')) return 'Quiz';
-  if (lowerHeader.contains('mid')) return 'Mid';
-  if (lowerHeader.contains('final')) return 'Final';
-  if (lowerHeader.contains('practical')) return 'Practical';
-  return 'Other';
-}
+    return records;
+  }
+
+  // Select assessment type
+  void selectAssessmentType(String type) {
+    debugPrint('Selected assessment type: $type');
+    selectedAssessmentType.value = type;
+  }
+
+  // Edit uploaded file
   Future<void> editUploadedFile() async {
-    if (excelFileName.isEmpty) {
-      showError("No file uploaded to edit");
-      return;
-    }
-
     try {
-      isLoading(true);
-      
-      final result = await FilePicker.platform.pickFiles(
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['xlsx', 'xls'],
         withData: true,
       );
-      
-      if (result == null) return;
-      
-      await loadAssessmentData(result);
-      
-      showSuccess("File edited successfully");
+
+      if (result != null) {
+        await loadAssessmentData(result);
+      }
     } catch (e) {
-      showError("Error editing file: ${e.toString()}");
-    } finally {
-      isLoading(false);
+      debugPrint('Error editing file: $e');
+      showError("Failed to edit file: ${e.toString()}");
     }
   }
 
-  Future<void> addNewColumns(List<String> newColumns) async {
-    if (excelBytes == null) {
-      showError("No file data available");
-      return;
-    }
-
+  // Export updated sheet
+  Future<File?> exportUpdatedSheet() async {
     try {
+      if (excelBytes == null) {
+        showError("No Excel file loaded");
+        return null;
+      }
+
       isLoading(true);
-      
+      debugPrint('Exporting updated sheet...');
+
       final excel = Excel.decodeBytes(excelBytes!);
       final sheet = excel.tables.values.first;
-      
-      final headers = sheet.rows.first.map((c) => c?.value?.toString()).toList();
-      headers.addAll(newColumns);
-      sheet.rows.first = headers.map((h) => TextCellValue(h ?? '')).cast<Data?>().toList();
-      
-      for (int i = 1; i < sheet.rows.length; i++) {
-        for (var _ in newColumns) {
+
+      final headers = sheet.rows.first.map((cell) => cell?.value?.toString()).toList();
+      debugPrint('Original headers: $headers');
+
+      int regNoIndex = headers.indexWhere((h) => h?.toLowerCase().contains('regno') ?? false);
+      if (regNoIndex == -1) {
+        throw Exception("RegNo column not found in original sheet");
+      }
+
+      // Add new assessment column if it doesn't exist
+      final assessmentType = selectedAssessmentType.value;
+      if (!headers.contains(assessmentType)) {
+        headers.add(assessmentType);
+        sheet.rows[0] = headers.map((h) => TextCellValue(h ?? '')).cast<Data?>().toList();
+        for (int i = 1; i < sheet.rows.length; i++) {
           sheet.rows[i].add(TextCellValue('') as Data?);
         }
       }
-      
-      excelBytes = excel.encode() as Uint8List?;
-      await loadAssessmentDataFromBytes(excelBytes!);
-      
-      showSuccess("${newColumns.length} new columns added successfully");
+
+      int assessmentIndex = headers.indexOf(assessmentType);
+
+      // Update marks for each student
+      for (int i = 1; i < sheet.rows.length; i++) {
+        final regCell = sheet.rows[i][regNoIndex];
+        final regNo = regCell?.value?.toString() ?? '';
+        final marks = getStudentMarks(regNo);
+
+        if (marks != null) {
+          sheet.rows[i][assessmentIndex] = DoubleCellValue(marks) as Data?;
+          debugPrint('Updated marks for $regNo: $marks');
+        }
+      }
+
+      final file = await _saveExcelFile(excel.encode()!);
+      debugPrint('File exported successfully: ${file.path}');
+      return file;
     } catch (e) {
-      showError("Error adding columns: ${e.toString()}");
+      debugPrint('Error exporting sheet: $e');
+      showError("Failed to export sheet: ${e.toString()}");
+      return null;
     } finally {
       isLoading(false);
     }
   }
 
-  Future<void> generateOBESheet() async {
-    if (!dataReady.value) {
-      showError("Complete all data requirements first");
-      return;
-    }
+  // Update student marks
+  void updateStudentMarks(String scannedRegNo, double scannedMarks) {
+    try {
+      if (selectedAssessmentType.value.isEmpty) {
+        throw Exception("No assessment type selected");
+      }
 
+      final student = studentRecords.firstWhere(
+        (s) => s.regNo.trim().toLowerCase() == scannedRegNo.trim().toLowerCase(),
+        orElse: () => StudentRecord(),
+      );
+
+      if (student.regNo.isEmpty) {
+        throw Exception("Student not found: $scannedRegNo");
+      }
+
+      final assessment = selectedAssessmentType.value;
+      if (assessment.toLowerCase().contains('quiz')) {
+        student.quizScores[assessment] = scannedMarks;
+      } else if (assessment.toLowerCase().contains('assignment')) {
+        student.assignmentScores[assessment] = scannedMarks;
+      } else {
+        student.examScores[assessment] = scannedMarks;
+      }
+
+      studentRecords.refresh();
+      debugPrint('Updated marks for $scannedRegNo in $assessment: $scannedMarks');
+      showSuccess("Marks updated for $scannedRegNo");
+    } catch (e) {
+      debugPrint('Error updating marks: $e');
+      showError(e.toString());
+    }
+  }
+
+  // Generate OBE sheet
+  Future<void> generateOBESheet() async {
     try {
       isLoading(true);
-      normalizeWeights();
-      
-      if (!validateDataIntegrity()) {
-        throw Exception("Data validation failed. Please check your inputs.");
+      debugPrint('Generating OBE CLO Report...');
+
+      // Validate data
+      if (courseCode.value.isEmpty || courseName.value.isEmpty) {
+        throw Exception("Course information not complete");
+      }
+
+      if (studentRecords.isEmpty) {
+        throw Exception("No student data available");
       }
 
       final excel = Excel.createExcel();
+      debugPrint('Created new Excel workbook');
+
+      // Create sheets
       _createCLOAnalysisSheet(excel);
       _createStudentReportSheet(excel);
       _createSummarySheet(excel);
 
-      if (excel.tables.isEmpty) {
-        throw Exception("No sheets were created in the Excel file");
-      }
-
       final bytes = excel.encode();
-      if (bytes == null || bytes.isEmpty) {
-        throw Exception("Failed to generate Excel file");
+      if (bytes == null) {
+        throw Exception("Failed to encode Excel file");
       }
 
       final file = await _saveExcelFile(bytes);
-      showSuccess("OBE Report generated successfully: ${file.path}");
-      
+      studentPreviewData.assignAll(studentRecords);
+      debugPrint('OBE Report generated successfully');
+      showSuccess("OBE Report generated: ${file.path}");
     } catch (e) {
+      debugPrint('Error generating report: $e');
       showError("Report generation failed: ${e.toString()}");
-      debugPrint(e.toString());
-      debugPrintStack(stackTrace: StackTrace.current);
     } finally {
       isLoading(false);
     }
   }
 
-  void normalizeWeights() {
-    final totalWeight = assessmentWeights.values.fold(0.0, (a, b) => a + b);
-    
-    if (totalWeight == 0) {
-      assessmentWeights.value = {
-        'Quiz': 0.2,
-        'Mid': 0.3,
-        'Final': 0.4,
-        'Practical': 0.1,
-      };
-    } else if ((totalWeight - 1.0).abs() > 0.001) {
-      final normalizedWeights = Map<String, double>.from(assessmentWeights)
-        ..updateAll((key, value) => value / totalWeight);
-      assessmentWeights.value = normalizedWeights;
-    }
-  }
-void _createCLOAnalysisSheet(Excel excel) {
-  final sheet = excel['CLO Analysis'];
-  
-  // Dynamic headers based on available data
-  final headers = ['CLO Code', 'Description', 'Target %', 'Achieved %'];
-  if (assessmentWeights.isNotEmpty) {
-    headers.add('Weight');
-  }
-  headers.addAll(['Gap', 'Status']);
-  
-  sheet.appendRow(headers.map(TextCellValue.new).toList());
-  
-  for (final clo in cloData) {
-    final achieved = calculateCLOAchievement(clo.code);
-    final gap = achieved - clo.target;
-    
-    final row = [
-      TextCellValue(clo.code),
-      TextCellValue(clo.description),
-      DoubleCellValue(clo.target),
-      DoubleCellValue(achieved),
-    ];
-    
-    if (assessmentWeights.isNotEmpty) {
-      row.add(DoubleCellValue(assessmentWeights[clo.code] ?? 0));
-    }
-    
-    row.addAll([
-      DoubleCellValue(gap),
-      TextCellValue(gap >= 0 ? 'Achieved' : 'Not Achieved'),
-    ]);
-    
-    sheet.appendRow(row);
-  }
-}
+  void _createCLOAnalysisSheet(Excel excel) {
+    final sheet = excel['CLO Analysis'];
+    debugPrint('Creating CLO Analysis sheet...');
 
-  void _createStudentReportSheet(Excel excel) {
-    final sheet = excel['Student Reports'];
-    
-    final headers = ['RegNo', 'Name', ...cloData.map((e) => e.code)];
-    sheet.appendRow(headers.map(TextCellValue.new).toList());
-    
-    for (final student in studentRecords) {
-      final row = [
-        TextCellValue(student.regNo),
-        TextCellValue(student.name),
-        ...cloData.map((clo) => DoubleCellValue(student.cloScores[clo.code] ?? 0))
-      ];
-      sheet.appendRow(row);
-    }
-  }
-
-  void _createSummarySheet(Excel excel) {
-    final sheet = excel['Summary'];
-    
-    sheet.appendRow([TextCellValue('Course: $courseCode - $courseName')]);
-    sheet.merge(CellIndex.indexByString('A1'), CellIndex.indexByString('D1'));
-    
+    // Headers
     sheet.appendRow([
-      'CLO', 'Target', 'Achieved', 'Status'
-    ].map(TextCellValue.new).toList());
-    
-    for (final clo in cloData) {
-      final achieved = calculateCLOAchievement(clo.code);
+      TextCellValue('CLO Code'),
+      TextCellValue('Description'),
+      TextCellValue('Target %'),
+      TextCellValue('Achieved %'),
+      TextCellValue('Status'),
+    ]);
+
+    // Sample CLO data - in real app, this would come from user input
+    final sampleClos = [
+      CLO(code: 'CLO1', description: 'Understand concepts', target: 70, weight: 0.3),
+      CLO(code: 'CLO2', description: 'Apply knowledge', target: 65, weight: 0.4),
+      CLO(code: 'CLO3', description: 'Analyze problems', target: 60, weight: 0.3),
+    ];
+
+    for (final clo in sampleClos) {
+      final achieved = 65.0; // This would be calculated from student data
+      final status = achieved >= clo.target ? 'Achieved' : 'Not Achieved';
+      
       sheet.appendRow([
         TextCellValue(clo.code),
+        TextCellValue(clo.description),
         DoubleCellValue(clo.target),
         DoubleCellValue(achieved),
-        TextCellValue(achieved >= clo.target ? '✓' : '✗'),
+        TextCellValue(status),
       ]);
     }
   }
 
- // In your OBECLOSheetController class
-double calculateCLOAchievement(String cloCode) {  // Changed from _calculateCLOAchievement to calculateCLOAchievement
-  try {
-    final validScores = studentRecords
-        .map((s) => s.cloScores[cloCode] ?? 0)
-        .where((s) => s >= 0 && s <= 100)
-        .toList();
-    
-    if (validScores.isEmpty) return 0;
-    
-    if (assessmentWeights.isNotEmpty) {
-      double weightedSum = 0;
-      double totalWeight = 0;
-      
-      for (final student in studentRecords) {
-        final score = student.cloScores[cloCode] ?? 0;
-        final studentWeight = _calculateStudentWeight(student);
-        weightedSum += score * studentWeight;
-        totalWeight += studentWeight;
-      }
-      
-      return totalWeight > 0 ? weightedSum / totalWeight : 0;
-    }
-    
-    return validScores.reduce((a, b) => a + b) / validScores.length;
-  } catch (e) {
-    showError("Error calculating CLO achievement: ${e.toString()}");
-    return 0;
-  }
-}
+  void _createStudentReportSheet(Excel excel) {
+    final sheet = excel['Student Report'];
+    debugPrint('Creating Student Report sheet...');
 
-  double _calculateStudentWeight(StudentRecord student) {
-    double weight = 0;
-    
-    for (final assessment in assessmentWeights.keys) {
-      if (student.quizScores.containsKey(assessment)) {
-        weight += assessmentWeights[assessment] ?? 0;
-      }
+    // Headers
+    sheet.appendRow([
+      TextCellValue('RegNo'),
+      TextCellValue('Name'),
+      TextCellValue('Quiz 1'),
+      TextCellValue('Quiz 2'),
+      TextCellValue('Assignment 1'),
+      TextCellValue('Assignment 2'),
+      TextCellValue('Mid Term'),
+      TextCellValue('Final Term'),
+      TextCellValue('Total'),
+      TextCellValue('Grade'),
+    ]);
+
+    // Student data
+    for (final student in studentRecords) {
+      final quiz1 = student.quizScores['Quiz 1'] ?? 0;
+      final quiz2 = student.quizScores['Quiz 2'] ?? 0;
+      final assignment1 = student.assignmentScores['Assignment 1'] ?? 0;
+      final assignment2 = student.assignmentScores['Assignment 2'] ?? 0;
+      final mid = student.examScores['Mid Term'] ?? 0;
+      final finalExam = student.examScores['Final Term'] ?? 0;
+
+      final total = (quiz1 * assessmentWeights['Quiz 1']!) +
+          (quiz2 * assessmentWeights['Quiz 2']!) +
+          (assignment1 * assessmentWeights['Assignment 1']!) +
+          (assignment2 * assessmentWeights['Assignment 2']!) +
+          (mid * assessmentWeights['Mid Term']!) +
+          (finalExam * assessmentWeights['Final Term']!);
+
+      final grade = _calculateGrade(total);
+
+      sheet.appendRow([
+        TextCellValue(student.regNo),
+        TextCellValue(student.name),
+        DoubleCellValue(quiz1),
+        DoubleCellValue(quiz2),
+        DoubleCellValue(assignment1),
+        DoubleCellValue(assignment2),
+        DoubleCellValue(mid),
+        DoubleCellValue(finalExam),
+        DoubleCellValue(total),
+        TextCellValue(grade),
+      ]);
     }
-    
-    return weight > 0 ? weight : 1.0;
+  }
+
+  String _calculateGrade(double marks) {
+    if (marks >= 85) return 'A';
+    if (marks >= 75) return 'B';
+    if (marks >= 65) return 'C';
+    if (marks >= 55) return 'D';
+    return 'F';
+  }
+
+  void _createSummarySheet(Excel excel) {
+    final sheet = excel['Summary'];
+    debugPrint('Creating Summary sheet...');
+
+    // Course info
+    sheet.appendRow([TextCellValue('Course: ${courseCode.value} - ${courseName.value}')]);
+    sheet.appendRow([TextCellValue('Generated on: ${DateTime.now()}')]);
+    sheet.appendRow([]);
+
+    // Assessment weights
+    sheet.appendRow([TextCellValue('Assessment Weights:')]);
+    assessmentWeights.forEach((key, value) {
+      sheet.appendRow([
+        TextCellValue(key),
+        DoubleCellValue(value * 100),
+        TextCellValue('%'),
+      ]);
+    });
+    sheet.appendRow([]);
+
+    // CLO summary
+    sheet.appendRow([TextCellValue('CLO Achievement Summary:')]);
+    sheet.appendRow([
+      TextCellValue('CLO Code'),
+      TextCellValue('Target'),
+      TextCellValue('Achieved'),
+      TextCellValue('Status'),
+    ]);
+
+    // Sample CLO data
+    sheet.appendRow([
+      TextCellValue('CLO1'),
+      DoubleCellValue(70),
+      DoubleCellValue(68),
+      TextCellValue('Not Achieved'),
+    ]);
+    sheet.appendRow([
+      TextCellValue('CLO2'),
+      DoubleCellValue(65),
+      DoubleCellValue(72),
+      TextCellValue('Achieved'),
+    ]);
+    sheet.appendRow([
+      TextCellValue('CLO3'),
+      DoubleCellValue(60),
+      DoubleCellValue(63),
+      TextCellValue('Achieved'),
+    ]);
   }
 
   Future<File> _saveExcelFile(List<int> bytes) async {
     final dir = await getApplicationDocumentsDirectory();
-    final filename = 'OBE_${courseCode}_${DateTime.now().millisecondsSinceEpoch}.xlsx';
+    final filename = 'OBE_${courseCode.value}_${DateTime.now().millisecondsSinceEpoch}.xlsx';
     final file = File('${dir.path}/$filename');
     await file.writeAsBytes(bytes);
     return file;
   }
 
-  void clearData() {
-    courseName.value = '';
-    courseCode.value = '';
-    assessmentWeights.clear();
-    cloData.clear();
-    studentRecords.clear();
-    excelFileName.value = '';
-    excelBytes = null;
-    dataReady.value = false;
+  // Get student marks
+  double? getStudentMarks(String regNo) {
+    final student = studentRecords.firstWhere(
+      (s) => s.regNo.trim().toLowerCase() == regNo.trim().toLowerCase(),
+      orElse: () => StudentRecord(),
+    );
+
+    if (student.regNo.isEmpty || selectedAssessmentType.value.isEmpty) return null;
+
+    final selected = selectedAssessmentType.value;
+    if (selected.toLowerCase().contains('quiz')) {
+      return student.quizScores[selected];
+    } else if (selected.toLowerCase().contains('assignment')) {
+      return student.assignmentScores[selected];
+    } else {
+      return student.examScores[selected];
+    }
   }
 
+  // Show error message
   void showError(String message) {
+    debugPrint('Error: $message');
     Fluttertoast.showToast(
       msg: message,
       backgroundColor: Colors.red,
       textColor: Colors.white,
+      toastLength: Toast.LENGTH_LONG,
     );
   }
 
+  // Show success message
   void showSuccess(String message) {
+    debugPrint('Success: $message');
     Fluttertoast.showToast(
       msg: message,
       backgroundColor: Colors.green,
       textColor: Colors.white,
+      toastLength: Toast.LENGTH_LONG,
     );
   }
+}
+
+class StudentRecord {
+  String regNo = '';
+  String name = '';
+  Map<String, double> quizScores = {};
+  Map<String, double> assignmentScores = {};
+  Map<String, double> examScores = {};
+
+  @override
+  String toString() => 'StudentRecord(regNo: $regNo, name: $name)';
 }
 
 class CLO {
@@ -489,13 +489,4 @@ class CLO {
     required this.target,
     required this.weight,
   });
-}
-
-class StudentRecord {
-  String regNo = '';
-  String name = '';
-  Map<String, double> quizScores = {};
-  Map<String, double> assignmentScores = {};
-  Map<String, double> examScores = {};
-  Map<String, double> cloScores = {};
 }

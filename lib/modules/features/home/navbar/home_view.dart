@@ -14,7 +14,6 @@ import '../../../../core/exports.dart';
 import '../../../../core/storage_services.dart';
 import '../../../../models/tool_model.dart';
 import '../tools/tools_section.dart';
-// import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 class HomeView extends StatefulWidget {
   @override
@@ -23,8 +22,8 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   bool isLoading = true;
-  String userName = '';
-  String fullName = '';
+  String userName = 'User';
+  String fullName = 'User';
   List<Map<String, String>> recentFiles = [];
 
   final NewsFeedController controller = Get.put(NewsFeedController());
@@ -33,74 +32,110 @@ class _HomeViewState extends State<HomeView> {
   @override
   void initState() {
     super.initState();
-    loadUserData();
-    loadRecentPdfFiles();
+    _initializeData();
+  }
 
-    if (_controller.hasShownShimmer) {
-      isLoading = false;
-    } else {
-      Future.delayed(Duration(seconds: 2), () {
-        setState(() {
-          isLoading = false;
-          _controller.hasShownShimmer = true;
-        });
+  Future<void> _initializeData() async {
+    try {
+      // Initialize StorageService if not already done
+      await StorageService.ensureInitialized();
+      
+      // Load user data
+      await loadUserData();
+      
+      // Load recent files
+      await _loadRecentPdfFiles();
+      
+      // Handle shimmer effect
+      if (_controller.hasShownShimmer) {
+        if (mounted) setState(() => isLoading = false);
+      } else {
+        await Future.delayed(Duration(seconds: 2));
+        if (mounted) {
+          setState(() {
+            isLoading = false;
+            _controller.hasShownShimmer = true;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error initializing home data: $e');
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+Future<void> loadUserData() async {
+  try {
+    await StorageService.ensureInitialized();
+    final name = await StorageService.getUserName() ?? 'User';
+    final fullName = await StorageService.getUserName() ?? 'User';
+    
+    if (mounted) {
+      setState(() {
+        this.userName = name;
+        this.fullName = fullName;
+      });
+    }
+  } catch (e) {
+    debugPrint('Error loading user data: $e');
+    if (mounted) {
+      setState(() {
+        userName = 'User';
+        fullName = 'User';
       });
     }
   }
+}
 
-  void loadUserData() {
-    setState(() {
-        StorageService.printAllStoredData(); // 🔍 Show all keys
-      userName = StorageService.getUserName() ?? '';
-      fullName = StorageService.getUserName() ?? '';
-        debugPrint('Fetched Name from SharedPrefs: $userName');
-        debugPrint('Fetched Full Name from SharedPrefs: $fullName');
-      userName = userName.isNotEmpty ? userName : 'User'; 
-      fullName = fullName.isNotEmpty ? fullName : 'User';
-      
-    });
-  }
+  Future<void> _loadRecentPdfFiles() async {
+    try {
+      final status = await Permission.manageExternalStorage.request();
+      if (!status.isGranted) {
+        debugPrint('Storage permission not granted');
+        return;
+      }
 
-  Future<void> loadRecentPdfFiles() async {
-    final status = await Permission.manageExternalStorage.request();
-    if (!status.isGranted) return;
+      Directory? downloadDir;
+      if (Platform.isAndroid) {
+        downloadDir = Directory('/storage/emulated/0/Download');
+      } else {
+        downloadDir = await getDownloadsDirectory();
+      }
 
-    Directory? downloadDir;
-    if (Platform.isAndroid) {
-      downloadDir = Directory('/storage/emulated/0/Download');
-    } else {
-      downloadDir = await getDownloadsDirectory();
+      if (downloadDir == null || !downloadDir.existsSync()) {
+        debugPrint('Download directory not found');
+        return;
+      }
+
+      final List<FileSystemEntity> files = downloadDir.listSync();
+      final List<File> pdfFiles = files
+          .whereType<File>()
+          .where((file) {
+            final fileName = file.uri.pathSegments.last.toLowerCase();
+            return fileName.startsWith('scan_') && fileName.endsWith('.pdf');
+          })
+          .toList();
+
+      pdfFiles.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+
+      final parsedFiles = pdfFiles.map((file) {
+        final modified = file.lastModifiedSync();
+        return {
+          'title': file.uri.pathSegments.last,
+          'date': DateFormat('yyyy-MM-dd').format(modified),
+          'time': DateFormat('hh:mm a').format(modified),
+          'path': file.path,
+        };
+      }).toList();
+
+      if (mounted) {
+        setState(() => recentFiles = parsedFiles);
+      }
+    } catch (e) {
+      debugPrint('Error loading recent files: $e');
+      if (mounted) {
+        setState(() => recentFiles = []);
+      }
     }
-
-    if (downloadDir == null || !downloadDir.existsSync()) return;
-
-    final List<FileSystemEntity> files = downloadDir.listSync();
-
-    final List<File> pdfFiles = files
-        .whereType<File>()
-        .where((file) {
-      final fileName = file.uri.pathSegments.last.toLowerCase();
-      return fileName.startsWith('scan_') && fileName.endsWith('.pdf');
-    })
-        .toList();
-
-
-    // Sort by latest modified
-    pdfFiles.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
-
-    final List<Map<String, String>> parsedFiles = pdfFiles.map((file) {
-      final modified = file.lastModifiedSync();
-      return {
-        'title': file.uri.pathSegments.last,
-        'date': DateFormat('yyyy-MM-dd').format(modified),
-        'time': DateFormat('hh:mm a').format(modified),
-        'path': file.path,
-      };
-    }).toList();
-
-    setState(() {
-      recentFiles = parsedFiles;
-    });
   }
 
   void _openPDF(BuildContext context, String path) {
@@ -149,7 +184,6 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,6 +191,7 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
+  // Rest of your existing widget methods remain exactly the same
   Widget _buildShimmerEffect() {
     return SingleChildScrollView(
       child: Column(
@@ -180,7 +215,7 @@ class _HomeViewState extends State<HomeView> {
           children: [
             InfoCard(
               username: userName,
-              fullName: userName,
+              fullName: fullName,
             ),
             SizedBox(height: 16.h),
             ToolsSection(

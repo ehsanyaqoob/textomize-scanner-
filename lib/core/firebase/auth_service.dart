@@ -32,29 +32,27 @@ class AuthService {
 
   // ✅ Save User Data to Firestore
   Future<void> saveUserToFirestore({
-    required String uid,
-    required String name,
-    required String phone,
-    required String email,
-    Map<String, dynamic>? additionalData,
-  }) async {
-    try {
-      debugPrint('📤 Saving user data to Firestore for UID: $uid');
-      await _firestore.collection('users').doc(uid).set({
-        'uid': uid,
-        'name': name,
-        'phone': phone,
-        'email': email,
-        'createdAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
-        if (additionalData != null) ...additionalData,
-      });
-      debugPrint('✅ Firestore user data saved');
-    } catch (e) {
-      debugPrint('❌ Error saving user data: $e');
-      throw AuthException('firestore-save-failed', 'Failed to save user data');
-    }
+  required String uid,
+  required String name,
+  required String phone,
+  required String email,
+}) async {
+  try {
+    await _firestore.collection('users').doc(uid).set({
+      'uid': uid,
+      'name': name,
+      'phone': phone,
+      'email': email,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  } on FirebaseException catch (e) {
+    debugPrint('Firestore error: ${e.code} - ${e.message}');
+    throw AuthException(e.code, e.message ?? 'Firestore operation failed');
+  } catch (e) {
+    debugPrint('Unexpected error: $e');
+    throw AuthException('firestore-error', 'Failed to save user data');
   }
+}
 
   // 🔁 Sign Up and Save Firestore User
   Future<UserCredential> signUpAndSaveUser({
@@ -77,7 +75,8 @@ class AuthService {
         name: name,
         phone: phone,
         email: email,
-        additionalData: additionalData,
+
+        // additionalData: additionalData,
       );
 
       debugPrint('✅ Sign up + Firestore save completed');

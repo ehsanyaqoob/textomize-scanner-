@@ -72,7 +72,7 @@ class SignUpController extends GetxController {
     return true;
   }
 
-  Future<void> signUp() async {
+Future<void> signUp() async {
     if (_controllersDisposed) {
       debugPrint('Controllers were disposed, reinitializing');
       _initializeControllers();
@@ -93,6 +93,9 @@ class SignUpController extends GetxController {
     isLoading.value = true;
 
     try {
+      // Initialize storage service
+      await StorageService.ensureInitialized();
+
       final userCredential = await _authService.signUpAndSaveUser(
         email: email,
         password: password,
@@ -100,7 +103,21 @@ class SignUpController extends GetxController {
         phone: phone,
       );
 
-      await _saveUserData(name, phone, email, userCredential);
+      if (userCredential.user == null) {
+        throw AuthException('no-user', 'User creation failed');
+      }
+
+      // Save user data to local storage
+      await StorageService.saveUserDetails(
+        id: userCredential.user!.uid,
+        name: name,
+        email: email,
+        phone: phone,
+      );
+
+      // Set logged in status
+      await StorageService.setLoggedIn(true);
+
       await _authService.sendEmailVerification();
 
       _showSuccess(
@@ -121,14 +138,24 @@ class SignUpController extends GetxController {
     }
   }
 
-  Future<void> _saveUserData(String name, String phone, String email, UserCredential userCredential) async {
+ Future<void> _saveUserData(String name, String phone, String email, UserCredential userCredential) async {
+  try {
+    await StorageService.ensureInitialized();
     await Future.wait([
-      StorageService.saveUserName(name),
-      StorageService.savePhoneNumber(phone),
-      StorageService.saveUserEmail(email),
-      StorageService.saveUserId(userCredential.user?.uid ?? ''),
+      StorageService.saveUserDetails(
+        id: userCredential.user?.uid ?? '',
+        name: name,
+        email: email,
+        phone: phone,
+      ),
+      StorageService.setLoggedIn(true),
     ]);
+    debugPrint('✅ User data saved to local storage');
+  } catch (e) {
+    debugPrint('❌ Error saving user data: $e');
+    rethrow;
   }
+}
 
   Future<void> _navigateToSignIn() async {
     // Clear form before navigation

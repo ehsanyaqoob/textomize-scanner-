@@ -33,6 +33,9 @@ class SignInController extends GetxController {
     debugPrint('Starting authentication process');
 
     try {
+      // Initialize storage service
+      await StorageService.ensureInitialized();
+
       final userCredential = await _authService.signIn(email, password);
       final user = userCredential.user;
 
@@ -50,10 +53,17 @@ class SignInController extends GetxController {
       // Fetch extra user details from Firestore
       final userData = await _fetchUserProfile(user.uid);
 
-      // Save user details if 'Remember Me' is checked
-      if (rememberMe.value) {
-        await _saveUserDetails(user, userData);
-      }
+      // Save user details
+      await StorageService.saveUserDetails(
+        id: user.uid,
+        name: userData?['name'] ?? user.displayName ?? 'Guest',
+        email: user.email ?? '',
+        phone: userData?['phone'] ?? '',
+        role: userData?['role'] ?? '',
+      );
+
+      // Set logged in status
+      await StorageService.setLoggedIn(true);
 
       _showSuccessToast('Welcome back!');
       _navigateToHome();
@@ -69,7 +79,6 @@ class SignInController extends GetxController {
       debugPrint('Sign in process completed');
     }
   }
-
   /// Fetches user profile data from Firestore
   Future<Map<String, dynamic>?> _fetchUserProfile(String uid) async {
     debugPrint('Fetching user profile from Firestore for UID: $uid');

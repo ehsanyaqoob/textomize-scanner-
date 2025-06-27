@@ -13,13 +13,11 @@ class SplashController extends GetxController with GetSingleTickerProviderStateM
   final RxDouble loadingValue = 0.0.obs;
   final RxDouble animationValue = 0.0.obs;
   late AnimationController _animationController;
+  final RxBool isLoading = false.obs;
 
   @override
-  void onInit() async {
+  void onInit() {
     super.onInit();
-    
-    // Initialize StorageService if not already done
-    await StorageService.init();
     
     _animationController = AnimationController(
       vsync: this,
@@ -28,7 +26,30 @@ class SplashController extends GetxController with GetSingleTickerProviderStateM
         animationValue.value = _animationController.value;
       });
     
-    startAnimation();
+    initializeApp();
+  }
+
+  Future<void> initializeApp() async {
+    try {
+      isLoading.value = true;
+      
+      // Initialize StorageService
+      await StorageService.ensureInitialized();
+      
+      // Start animations
+      startAnimation();
+    } catch (e) {
+      debugPrint('Error initializing app: $e');
+      Get.snackbar(
+        'Error', 
+        'Failed to initialize app',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      // Fallback navigation if initialization fails
+      Get.offAll(() => SignInView());
+    } finally {
+      isLoading.value = false;
+    }
   }
 
   @override
@@ -37,7 +58,7 @@ class SplashController extends GetxController with GetSingleTickerProviderStateM
     super.onClose();
   }
 
-  void startAnimation() async {
+  Future<void> startAnimation() async {
     // Start the background scanner lines animation
     _animationController.repeat();
     
@@ -74,32 +95,38 @@ class SplashController extends GetxController with GetSingleTickerProviderStateM
     // Brief pause before navigation
     await Future.delayed(const Duration(milliseconds: 500));
     
-    navigateToNextScreen();
+    await navigateToNextScreen();
   }
 
   Future<void> navigateToNextScreen() async {
-    // Check if it's the first launch (this will be true only once)
-    final isFirstLaunch = await StorageService.getFirstLaunchStatus();
-    
-    if (isFirstLaunch) {
-      // First time user - show onboarding and mark launch as complete
-      debugPrint('First launch - showing onboarding');
-      await StorageService.setFirstLaunchStatus(false);
-      Get.offAll(() => const Boarding());
-      return;
-    }
-    
-    // For all subsequent launches, check authentication status directly
-    final isLoggedIn = StorageService.isLoggedIn();
-    
-    if (isLoggedIn) {
-      // User is authenticated - go to home
-      debugPrint('User is logged in, navigating to home');
-      debugPrint('User data: ${StorageService.getUserData()}');
-      Get.offAll(() => NavBarNavigation());
-    } else {
-      // User needs to authenticate
-      debugPrint('User not logged in, navigating to sign in');
+    try {
+      // Check if it's the first launch
+      final isFirstLaunch = await StorageService.getFirstLaunchStatus();
+      
+      if (isFirstLaunch) {
+        debugPrint('First launch - showing onboarding');
+        await StorageService.setFirstLaunchStatus(false);
+        Get.offAll(() => const Boarding());
+        return;
+      }
+      
+      // Check authentication status
+      final isLoggedIn = await StorageService.isLoggedIn();
+      final userData = await StorageService.getUserData();
+      
+      debugPrint('User login status: $isLoggedIn');
+      debugPrint('User data: $userData');
+      
+      if (isLoggedIn && userData != null) {
+        debugPrint('User is logged in, navigating to home');
+        Get.offAll(() => NavBarNavigation());
+      } else {
+        debugPrint('User not logged in, navigating to sign in');
+        Get.offAll(() => SignInView());
+      }
+    } catch (e) {
+      debugPrint('Error during navigation decision: $e');
+      // Fallback to sign in view if something goes wrong
       Get.offAll(() => SignInView());
     }
   }
