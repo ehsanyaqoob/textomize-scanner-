@@ -39,13 +39,13 @@ class _HomeViewState extends State<HomeView> {
     try {
       // Initialize StorageService if not already done
       await StorageService.ensureInitialized();
-      
+
       // Load user data
       await loadUserData();
-      
+
       // Load recent files
       await _loadRecentPdfFiles();
-      
+
       // Handle shimmer effect
       if (_controller.hasShownShimmer) {
         if (mounted) setState(() => isLoading = false);
@@ -63,28 +63,29 @@ class _HomeViewState extends State<HomeView> {
       if (mounted) setState(() => isLoading = false);
     }
   }
-Future<void> loadUserData() async {
-  try {
-    await StorageService.ensureInitialized();
-    final name = await StorageService.getUserName() ?? 'User';
-    final fullName = await StorageService.getUserName() ?? 'User';
-    
-    if (mounted) {
-      setState(() {
-        this.userName = name;
-        this.fullName = fullName;
-      });
-    }
-  } catch (e) {
-    debugPrint('Error loading user data: $e');
-    if (mounted) {
-      setState(() {
-        userName = 'User';
-        fullName = 'User';
-      });
+
+  Future<void> loadUserData() async {
+    try {
+      await StorageService.ensureInitialized();
+      final name = await StorageService.getUserName() ?? 'User';
+      final fullName = await StorageService.getUserName() ?? 'User';
+
+      if (mounted) {
+        setState(() {
+          this.userName = name;
+          this.fullName = fullName;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading user data: $e');
+      if (mounted) {
+        setState(() {
+          userName = 'User';
+          fullName = 'User';
+        });
+      }
     }
   }
-}
 
   Future<void> _loadRecentPdfFiles() async {
     try {
@@ -107,15 +108,13 @@ Future<void> loadUserData() async {
       }
 
       final List<FileSystemEntity> files = downloadDir.listSync();
-      final List<File> pdfFiles = files
-          .whereType<File>()
-          .where((file) {
-            final fileName = file.uri.pathSegments.last.toLowerCase();
-            return fileName.startsWith('scan_') && fileName.endsWith('.pdf');
-          })
-          .toList();
+      final List<File> pdfFiles = files.whereType<File>().where((file) {
+        final fileName = file.uri.pathSegments.last.toLowerCase();
+        return fileName.startsWith('scan_') && fileName.endsWith('.pdf');
+      }).toList();
 
-      pdfFiles.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+      pdfFiles
+          .sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
 
       final parsedFiles = pdfFiles.map((file) {
         final modified = file.lastModifiedSync();
@@ -143,7 +142,8 @@ Future<void> loadUserData() async {
       context: context,
       builder: (BuildContext context) {
         return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           child: Container(
             height: MediaQuery.of(context).size.height * 0.8,
             width: MediaQuery.of(context).size.width * 0.9,
@@ -221,7 +221,6 @@ Future<void> loadUserData() async {
             ToolsSection(
               tools: tools.map((tool) => Tool.fromMap(tool)).toList(),
             ),
-            SizedBox(height: 16.h),
             RecentFilesSection(
               recentFiles: recentFiles,
               onOpenPdf: _openPDF,
@@ -304,7 +303,6 @@ class RecentFilesSection extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: 10.0),
         ListView.builder(
           shrinkWrap: true,
           physics: NeverScrollableScrollPhysics(),
@@ -385,12 +383,13 @@ class RecentFilesSection extends StatelessWidget {
                       }
                     },
                     itemBuilder: (context) => [
-                      PopupMenuItem(child: CustomText(text: "Open"), value: "open"),
-                      PopupMenuItem(child: CustomText(text: "Delete"), value: "delete"),
+                      PopupMenuItem(
+                          child: CustomText(text: "Open"), value: "open"),
+                      PopupMenuItem(
+                          child: CustomText(text: "Delete"), value: "delete"),
                     ],
                     icon: Icon(Icons.more_vert, color: Colors.grey),
                   ),
-
                 ],
               ),
             );

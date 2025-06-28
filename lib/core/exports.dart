@@ -8,7 +8,6 @@ export 'package:fluttertoast/fluttertoast.dart';
 export '../../controllers/splash_con.dart';
 export '../App/app_colors.dart';
 export '../widgets/Custom_checkbox.dart';
-export '../widgets/chat_bubbles.dart';
 export '../widgets/custom_appbar.dart';
 export '../widgets/custom_button.dart';
 export '../widgets/custom_dialog_box.dart';

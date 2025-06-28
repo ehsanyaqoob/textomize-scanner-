@@ -79,6 +79,9 @@ android {
         targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        
+        // Add this if using Firebase ML Vision
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -89,6 +92,9 @@ android {
             // Signing with the debug keys for now, so flutter run --release works.
             signingConfig = signingConfigs.debug
         }
+    }
+     buildFeatures {
+        buildConfig true
     }
 }
 

@@ -1,4 +1,6 @@
 // obe_clo_view.dart
+import 'dart:io';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:textomize/controllers/obe_controller.dart';
@@ -360,58 +362,75 @@ class OBECLOView extends GetView<OBECLOSheetController> {
     );
   }
 
-  Widget _buildScanButton() {
-    return CustomButton(
-      title: 'Scan Student Paper',
-      icon: Icons.camera_alt,
-      onTap: () async {
-        if (controller.selectedAssessmentType.value.isEmpty) {
-          controller.showError("Please select an assessment type first");
-          return;
-        }
+Widget _buildScanButton() {
+  return CustomButton(
+    title: 'Scan Student Paper',
+    icon: Icons.camera_alt,
+    onTap: () async {
+      if (controller.selectedAssessmentType.value.isEmpty) {
+        controller.showError("Please select an assessment type first");
+        return;
+      }
 
-        // Simulate scanning - in real app, this would use OCR
-        final result = await Get.dialog(
-          AlertDialog(
-            title: Text('Enter Student Marks'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Registration Number',
-                  ),
-                ),
-                TextFormField(
-                  decoration: InputDecoration(
-                    labelText: 'Marks',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-              ],
+      final XFile? imageFile = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 90,
+      );
+      
+      if (imageFile == null) return;
+
+      Get.dialog(
+        Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+
+      try {
+        final scannedData = await controller.processScannedPaper(File(imageFile.path));
+        controller.updateStudentMarks(scannedData['regNo'], scannedData['marks']);
+        await controller.exportUpdatedSheet();
+        _showScanResultDialog(scannedData);
+      } catch (e) {
+        controller.showError("Scan failed: ${e.toString()}");
+      } finally {
+        Get.back();
+      }
+    },
+  );
+}
+
+  void _showScanResultDialog(Map<String, dynamic> data) {
+    Get.dialog(
+      AlertDialog(
+        title: Text('Scan Results'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: Text('Registration No'),
+              subtitle: Text(data['regNo']),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Get.back(),
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () => Get.back(result: {'regNo': '2021-arid-1234', 'marks': 17}),
-                child: Text('Submit'),
-              ),
-            ],
+            ListTile(
+              title: Text('Marks'),
+              subtitle: Text(data['marks'].toString()),
+            ),
+            ListTile(
+              title: Text('Assessment'),
+              subtitle: Text(controller.selectedAssessmentType.value),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('OK'),
           ),
-        );
-
-        if (result != null) {
-          controller.updateStudentMarks(
-            result['regNo'],
-            double.parse(result['marks'].toString()),
-          );
-        }
-      },
+        ],
+      ),
     );
   }
+
 
   Widget _buildExportButton() {
     return CustomButton(
