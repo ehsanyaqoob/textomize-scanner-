@@ -73,23 +73,10 @@ Future<void> requestAllPermissions() async {
   for (var permission in permissions) {
     final status = await permission.status;
     if (!status.isGranted) {
-      await permission.request(); // This shows the system permission dialog
+      await permission.request(); 
     }
   }
 }
 
-
- 
-// _________________________________________
-// |                                       |
-// |  UNIVERSITY NAME                      |
-// |  Course: CS-101 - OOP                 |
-// |  Assessment: Quiz 1                   |
-// |                                       |
-// |  Student ID: 21-ARID-632              |
-// |  Name: Ali Ahmed                      |
-// |                                       |
-// |  TOTAL: 15                            |
-// |_______________________________________|
   
 
