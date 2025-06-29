@@ -1,6 +1,6 @@
-// obe_clo_view.dart
-import 'dart:io';
 
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:textomize/controllers/obe_controller.dart';
@@ -9,6 +9,94 @@ import 'package:textomize/core/exports.dart';
 class OBECLOView extends GetView<OBECLOSheetController> {
   OBECLOView({Key? key}) : super(key: key);
   final controller = Get.put(OBECLOSheetController());
+  Widget _buildAssessmentConfiguration() {
+    return Card(
+      elevation: 4,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CustomText(
+              text: 'Assessment Weights',
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+            const SizedBox(height: 15),
+            ...controller.assessmentWeights.entries.map((entry) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(entry.key),
+                    ),
+                    SizedBox(
+                      width: 100,
+                      child: TextFormField(
+                        initialValue: entry.value.toStringAsFixed(2),
+                        keyboardType: TextInputType.number,
+                        decoration: InputDecoration(
+                          suffixText: '%',
+                          border: OutlineInputBorder(),
+                        ),
+                        onChanged: (value) {
+                          double? newValue = double.tryParse(value);
+                          if (newValue != null) {
+                            controller.assessmentWeights[entry.key] = newValue;
+                          }
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ],
+        ),
+      ),
+    );
+  }
+  Widget _buildAssessmentSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CustomText(
+          text: 'Select Assessment Type to Scan',
+          fontWeight: FontWeight.bold,
+          fontSize: 16,
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 10,
+          children: [
+            'Quiz 1',
+            'Quiz 2',
+            'Assignment 1',
+            'Assignment 2',
+            'Mid Term',
+            'Final Term'
+          ]
+              .map((type) => Obx(() {
+            final isSelected =
+                controller.selectedAssessmentType.value == type;
+            return ChoiceChip(
+              label: Text(type),
+              selected: isSelected,
+              onSelected: (_) => controller.selectAssessmentType(type),
+              selectedColor: AppColors.primaryColor,
+              backgroundColor: Colors.grey.shade200,
+              labelStyle: TextStyle(
+                color: isSelected ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            );
+          }))
+              .toList(),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +138,8 @@ class OBECLOView extends GetView<OBECLOSheetController> {
                 _buildAssessmentSelector(),
                 const SizedBox(height: 10),
                 _buildScanButton(),
-                const SizedBox(height: 10),
-                _buildExportButton(),
+                // const SizedBox(height: 10),
+                // _buildExportButton(),
                 const SizedBox(height: 30),
                 _buildGenerateButton(),
               ],
@@ -91,13 +179,13 @@ class OBECLOView extends GetView<OBECLOSheetController> {
                     )
                   else
                     ...controller.studentRecords.take(5).map((student) => ListTile(
-                          title: Text(student.name),
-                          subtitle: Text(student.regNo),
-                          trailing: Text(
-                            '${controller.getStudentMarks(student.regNo)?.toStringAsFixed(1) ?? '--'}',
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        )),
+                      title: Text(student.name),
+                      subtitle: Text(student.regNo),
+                      trailing: Text(
+                        '${controller.getStudentMarks(student.regNo)?.toStringAsFixed(1) ?? '--'}',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    )),
                   if (controller.studentRecords.length > 5)
                     TextButton(
                       onPressed: () => _showAllStudentsDialog(),
@@ -232,7 +320,7 @@ class OBECLOView extends GetView<OBECLOSheetController> {
                     onTap: () async {
                       try {
                         FilePickerResult? result =
-                            await FilePicker.platform.pickFiles(
+                        await FilePicker.platform.pickFiles(
                           type: FileType.custom,
                           allowedExtensions: ['xlsx', 'xls'],
                           withData: true,
@@ -271,134 +359,48 @@ class OBECLOView extends GetView<OBECLOSheetController> {
       ),
     );
   }
+  Widget _buildScanButton() {
+    return CustomButton(
+      title: 'Scan Student Paper',
+      icon: Icons.camera_alt,
+      onTap: () async {
+        if (controller.selectedAssessmentType.value.isEmpty) {
+          controller.showError("Please select an assessment type first");
+          return;
+        }
 
-  Widget _buildAssessmentConfiguration() {
-    return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            CustomText(
-              text: 'Assessment Weights',
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-            const SizedBox(height: 15),
-            ...controller.assessmentWeights.entries.map((entry) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(entry.key),
-                    ),
-                    SizedBox(
-                      width: 100,
-                      child: TextFormField(
-                        initialValue: entry.value.toStringAsFixed(2),
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          suffixText: '%',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: (value) {
-                          double? newValue = double.tryParse(value);
-                          if (newValue != null) {
-                            controller.assessmentWeights[entry.key] = newValue;
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
-          ],
-        ),
-      ),
+        final XFile? imageFile = await ImagePicker().pickImage(
+          source: ImageSource.camera,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          imageQuality: 90,
+        );
+
+        if (imageFile == null) return;
+
+        Get.dialog(
+          Center(child: CircularProgressIndicator()),
+          barrierDismissible: false,
+        );
+
+        try {
+          final scannedData = await controller.processScannedPaper(
+              File(imageFile.path));
+          controller.updateStudentMarks(
+            scannedData['regNo'],
+            scannedData['marks'],
+            Get.context!, // Use Get.context to access the current context
+          );
+          await controller.exportUpdatedSheet();
+          _showScanResultDialog(scannedData);
+        } catch (e) {
+          controller.showError("Scan failed: ${e.toString()}");
+        } finally {
+          Get.back();
+        }
+      },
     );
   }
-
-  Widget _buildAssessmentSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CustomText(
-          text: 'Select Assessment Type to Scan',
-          fontWeight: FontWeight.bold,
-          fontSize: 16,
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 10,
-          children: [
-            'Quiz 1',
-            'Quiz 2',
-            'Assignment 1',
-            'Assignment 2',
-            'Mid Term',
-            'Final Term'
-          ]
-              .map((type) => Obx(() {
-                    final isSelected =
-                        controller.selectedAssessmentType.value == type;
-                    return ChoiceChip(
-                      label: Text(type),
-                      selected: isSelected,
-                      onSelected: (_) => controller.selectAssessmentType(type),
-                      selectedColor: AppColors.primaryColor,
-                      backgroundColor: Colors.grey.shade200,
-                      labelStyle: TextStyle(
-                        color: isSelected ? Colors.white : Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    );
-                  }))
-              .toList(),
-        ),
-      ],
-    );
-  }
-
-Widget _buildScanButton() {
-  return CustomButton(
-    title: 'Scan Student Paper',
-    icon: Icons.camera_alt,
-    onTap: () async {
-      if (controller.selectedAssessmentType.value.isEmpty) {
-        controller.showError("Please select an assessment type first");
-        return;
-      }
-
-      final XFile? imageFile = await ImagePicker().pickImage(
-        source: ImageSource.camera,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 90,
-      );
-      
-      if (imageFile == null) return;
-
-      Get.dialog(
-        Center(child: CircularProgressIndicator()),
-        barrierDismissible: false,
-      );
-
-      try {
-        final scannedData = await controller.processScannedPaper(File(imageFile.path));
-        controller.updateStudentMarks(scannedData['regNo'], scannedData['marks']);
-        await controller.exportUpdatedSheet();
-        _showScanResultDialog(scannedData);
-      } catch (e) {
-        controller.showError("Scan failed: ${e.toString()}");
-      } finally {
-        Get.back();
-      }
-    },
-  );
-}
 
   void _showScanResultDialog(Map<String, dynamic> data) {
     Get.dialog(
@@ -430,7 +432,6 @@ Widget _buildScanButton() {
       ),
     );
   }
-
 
   Widget _buildExportButton() {
     return CustomButton(
@@ -500,17 +501,17 @@ Widget _buildScanButton() {
                     .take(5)
                     .map(
                       (student) => DataRow(
-                        cells: [
-                          DataCell(Text(student.regNo)),
-                          DataCell(Text(student.name)),
-                          DataCell(Text(
-                            controller
-                                .getStudentMarks(student.regNo)
-                                ?.toStringAsFixed(1) ?? '--',
-                          )),
-                        ],
-                      ),
-                    )
+                    cells: [
+                      DataCell(Text(student.regNo)),
+                      DataCell(Text(student.name)),
+                      DataCell(Text(
+                        controller
+                            .getStudentMarks(student.regNo)
+                            ?.toStringAsFixed(1) ?? '--',
+                      )),
+                    ],
+                  ),
+                )
                     .toList(),
               ),
             ],

@@ -57,30 +57,30 @@ class _NavBarNavigationState extends State<NavBarNavigation> {
     return WillPopScope(
       onWillPop: controller.onWillPop,
       child: Obx(() => Scaffold(
-            extendBody: true,
-            appBar: controller.currentIndex.value == 0
-                ? AppBar(
-                    title: FutureBuilder<String?>(
-                      future: Future.value(StorageService.getUserName()),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Text("Loading...");
-                        }
-                        return HomeAppBar(userName: snapshot.data ?? 'Guest');
-                      },
-                    ),
-                    automaticallyImplyLeading: false,
-                    elevation: 0,
-                    backgroundColor: Colors.transparent,
-                  )
-                : null,
-            body: SafeArea(
-              bottom: false,
-              child: controller.pages[controller.currentIndex.value],
-            ),
-            bottomNavigationBar: _BottomNavBar(),
-          )),
+        extendBody: true,
+        appBar: controller.currentIndex.value == 0
+            ? AppBar(
+          title: FutureBuilder<String?>(
+            future: Future.value(StorageService.getUserName()),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState ==
+                  ConnectionState.waiting) {
+                return const Text("Loading...");
+              }
+              return HomeAppBar(userName: snapshot.data ?? 'Guest');
+            },
+          ),
+          automaticallyImplyLeading: false,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+        )
+            : null,
+        body: SafeArea(
+          bottom: false,
+          child: controller.pages[controller.currentIndex.value],
+        ),
+        bottomNavigationBar: _BottomNavBar(),
+      )),
     );
   }
 }
@@ -112,57 +112,57 @@ class _BottomNavBar extends StatelessWidget {
         ],
       ),
       child: Obx(() => Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: navItems.asMap().entries.map((entry) {
-              final index = entry.key;
-              final item = entry.value;
-              final isSelected = controller.currentIndex.value == index;
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: navItems.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+          final isSelected = controller.currentIndex.value == index;
 
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => controller.changePage(index),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  curve: Curves.easeInOut,
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: isSelected
-                      ? BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.primaryColor,
-                              AppColors.secondaryColor,
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(20),
-                        )
-                      : null,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      SvgPicture.asset(
-                        item.icon,
-                        height: isSelected ? 26.0.h : 22.0.h, // Active icon is larger
-                        width: isSelected ? 26.0.w : 22.0.w, // Maintain aspect ratio
-                        color: isSelected ? Colors.white : Colors.grey.shade600,
-                      ),
-                      if (isSelected) ...[
-                        const SizedBox(width: 6),
-                        Text(
-                          item.label,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
+          return GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => controller.changePage(index),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 100),
+              curve: Curves.easeInOut,
+              padding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              decoration: isSelected
+                  ? BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.primaryColor,
+                    AppColors.secondaryColor,
+                  ],
                 ),
-              );
-            }).toList(),
-          )),
+                borderRadius: BorderRadius.circular(20),
+              )
+                  : null,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  SvgPicture.asset(
+                    item.icon,
+                    height: isSelected ? 20.0.h : 22.0.h, // Active icon is larger
+                    width: isSelected ? 22.0.w : 22.0.w, // Maintain aspect ratio
+                    color: isSelected ? Colors.white : Colors.grey.shade600,
+                  ),
+                  if (isSelected) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      item.label,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }).toList(),
+      )),
     );
   }
 }

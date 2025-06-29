@@ -159,8 +159,7 @@ class OBECLOSheetController extends GetxController {
       throw Exception("Failed to process scanned paper: ${e.toString()}");
     }
   }
-
-  void updateStudentMarks(String scannedRegNo, double scannedMarks) {
+  void updateStudentMarks(String scannedRegNo, double scannedMarks, BuildContext context) {
     _debugPrint('Updating marks for $scannedRegNo with $scannedMarks', tag: 'DATA');
     try {
       if (selectedAssessmentType.value.isEmpty) {
@@ -170,7 +169,7 @@ class OBECLOSheetController extends GetxController {
 
       _debugPrint('Looking for student: $scannedRegNo', tag: 'DATA');
       final student = studentRecords.firstWhere(
-        (s) => s.regNo.trim().toLowerCase() == scannedRegNo.trim().toLowerCase(),
+            (s) => s.regNo.trim().toLowerCase() == scannedRegNo.trim().toLowerCase(),
         orElse: () => StudentRecord(),
       );
 
@@ -199,12 +198,62 @@ class OBECLOSheetController extends GetxController {
       studentRecords.refresh();
       _debugPrint('Student records updated successfully', tag: 'DATA');
       showSuccess("Marks updated for $scannedRegNo");
+
+      // After showing the success message, pop the current screen
+      Navigator.pop(context); // This will navigate back to the parent screen
+
     } catch (e, stack) {
       _debugPrint('Error updating marks: $e', tag: 'DATA-ERROR');
       _debugPrint('Stack trace: $stack', tag: 'DATA-ERROR');
       showError(e.toString());
     }
   }
+
+  // void updateStudentMarks(String scannedRegNo, double scannedMarks) {
+  //   _debugPrint('Updating marks for $scannedRegNo with $scannedMarks', tag: 'DATA');
+  //   try {
+  //     if (selectedAssessmentType.value.isEmpty) {
+  //       _debugPrint('No assessment type selected', tag: 'DATA-ERROR');
+  //       throw Exception("No assessment type selected");
+  //     }
+  //
+  //     _debugPrint('Looking for student: $scannedRegNo', tag: 'DATA');
+  //     final student = studentRecords.firstWhere(
+  //       (s) => s.regNo.trim().toLowerCase() == scannedRegNo.trim().toLowerCase(),
+  //       orElse: () => StudentRecord(),
+  //     );
+  //
+  //     if (student.regNo.isEmpty) {
+  //       _debugPrint('Student not found: $scannedRegNo', tag: 'DATA-ERROR');
+  //       throw Exception("Student not found: $scannedRegNo");
+  //     }
+  //
+  //     final assessment = selectedAssessmentType.value;
+  //     final weight = assessmentWeights[assessment] ?? 1.0;
+  //     final weightedMarks = scannedMarks * weight;
+  //     _debugPrint('Assessment: $assessment, Weight: $weight, Weighted Marks: $weightedMarks', tag: 'DATA');
+  //
+  //     if (assessment.toLowerCase().contains('quiz')) {
+  //       student.quizScores[assessment] = weightedMarks;
+  //       _debugPrint('Updated quiz scores: ${student.quizScores}', tag: 'DATA');
+  //     } else if (assessment.toLowerCase().contains('assignment')) {
+  //       student.assignmentScores[assessment] = weightedMarks;
+  //       _debugPrint('Updated assignment scores: ${student.assignmentScores}', tag: 'DATA');
+  //     } else {
+  //       student.examScores[assessment] = weightedMarks;
+  //       _debugPrint('Updated exam scores: ${student.examScores}', tag: 'DATA');
+  //     }
+  //
+  //     studentPreviewData.assignAll(studentRecords);
+  //     studentRecords.refresh();
+  //     _debugPrint('Student records updated successfully', tag: 'DATA');
+  //     showSuccess("Marks updated for $scannedRegNo");
+  //   } catch (e, stack) {
+  //     _debugPrint('Error updating marks: $e', tag: 'DATA-ERROR');
+  //     _debugPrint('Stack trace: $stack', tag: 'DATA-ERROR');
+  //     showError(e.toString());
+  //   }
+  // }
 
   Future<void> loadAssessmentData(FilePickerResult result) async {
     _debugPrint('Loading assessment data started', tag: 'FILE');

@@ -118,7 +118,6 @@ import 'package:docx_template/docx_template.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:media_scanner/media_scanner.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:flutter/services.dart';
 import 'package:pdf/pdf.dart';
 
 class ScanDocumentController extends GetxController {
@@ -170,18 +169,6 @@ class ScanDocumentController extends GetxController {
     }
   }
 
-// Future<void> scanWithTesseract() async {
-//   final picker = ImagePicker();
-//   final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-
-//   if (pickedFile != null) {
-//     final text = await TesseractOcr.extractText(pickedFile.path);
-//     print("Extracted Text: $text");
-//     // You can now show this on the next screen
-//   } else {
-//     print("No image selected.");
-//   }
-// }
 
 //   /// Translate the extracted text
   Future<void> translateText(String targetLanguage) async {
@@ -189,7 +176,7 @@ class ScanDocumentController extends GetxController {
       try {
         final translator = GoogleTranslator();
         final translation =
-            await translator.translate(extractedText.value, to: targetLanguage);
+        await translator.translate(extractedText.value, to: targetLanguage);
         translatedText.value = translation.text;
       } catch (e) {
         Get.snackbar("Error", "Translation failed: $e");
@@ -201,7 +188,7 @@ class ScanDocumentController extends GetxController {
 
   /// Pick Image from Camera or Gallery
   Future<void> pickImage(ImageSource source) async {
-     // clearScannedData(); 
+    // clearScannedData();
     try {
       final XFile? pickedFile = await _picker.pickImage(source: source);
       if (pickedFile != null) {
@@ -209,7 +196,7 @@ class ScanDocumentController extends GetxController {
         extractedText.value = '';
         translatedText.value = '';
         scannedDocument.value =
-            ''; // Clear the scanned document when a new image is selected
+        ''; // Clear the scanned document when a new image is selected
       }
     } catch (e) {
       Get.snackbar("Error", "Failed to pick image: $e");
@@ -231,7 +218,7 @@ class ScanDocumentController extends GetxController {
       try {
         final inputImage = InputImage.fromFile(selectedImage.value!);
         final RecognizedText recognizedText =
-            await textRecognizer.processImage(inputImage);
+        await textRecognizer.processImage(inputImage);
 
         // Extract text from the recognized data
         extractedText.value = recognizedText.text.trim();
@@ -260,7 +247,7 @@ class ScanDocumentController extends GetxController {
     textRecognizer.close();
     super.onClose();
   }
-  
+
   void clearScannedData() {
     scannedDocument.value = '';
     translatedText.value = '';
@@ -268,35 +255,6 @@ class ScanDocumentController extends GetxController {
     isEditing.value = false;
   }
 
- 
-  /// Save the extracted text as PDF
-  // Future<void> saveAsPDF() async {
-  //   isSaving.value = true;
-  //
-  //   final status = await Permission.manageExternalStorage.request();
-  //   if (!status.isGranted) {
-  //     isSaving.value = false;
-  //     Get.snackbar('Permission Denied', 'Storage permission is required');
-  //     return;
-  //   }
-  //
-  //   final pdf = pw.Document();
-  //   pdf.addPage(
-  //     pw.Page(
-  //       build: (pw.Context context) =>
-  //           pw.Text(extractedText.value, style: pw.TextStyle(fontSize: 14)),
-  //     ),
-  //   );
-  //
-  //   final dir = await getExternalStorageDirectory();
-  //   final path =
-  //       '${dir!.path}/scan_${DateTime.now().millisecondsSinceEpoch}.pdf';
-  //   final file = File(path);
-  //   await file.writeAsBytes(await pdf.save());
-  //
-  //   isSaving.value = false;
-  //   Get.snackbar('Saved', 'PDF saved at $path');
-  // }
 
   Future<void> saveAsPDF() async {
     isSaving.value = true;
@@ -318,7 +276,9 @@ class ScanDocumentController extends GetxController {
 
     final downloadsDir = Directory('/storage/emulated/0/Download');
     final path =
-        '${downloadsDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.pdf';
+        '${downloadsDir.path}/scan_${DateTime
+        .now()
+        .millisecondsSinceEpoch}.pdf';
     final file = File(path);
     await file.writeAsBytes(await pdf.save());
 
@@ -350,7 +310,9 @@ class ScanDocumentController extends GetxController {
 
     final downloadsDir = Directory('/storage/emulated/0/Download');
     final path =
-        '${downloadsDir.path}/scan_${DateTime.now().millisecondsSinceEpoch}.docx';
+        '${downloadsDir.path}/scan_${DateTime
+        .now()
+        .millisecondsSinceEpoch}.docx';
     final file = File(path);
     await file.writeAsBytes(generated!);
 
@@ -360,32 +322,4 @@ class ScanDocumentController extends GetxController {
     isSaving.value = false;
     Get.snackbar('Saved', 'Word file saved in Downloads');
   }
-
-  /// Save the extracted text as DOCX
-  // Future<void> saveAsDocx() async {
-  //   isSaving.value = true;
-  //
-  //   final status = await Permission.manageExternalStorage.request();
-  //   if (!status.isGranted) {
-  //     isSaving.value = false;
-  //     Get.snackbar('Permission Denied', 'Storage permission is required');
-  //     return;
-  //   }
-  //
-  //   final sample = await rootBundle.load('assets/template.docx');
-  //   final docx = await DocxTemplate.fromBytes(sample.buffer.asUint8List());
-  //
-  //   Content c = Content();
-  //   c.add(TextContent("body", extractedText.value));
-  //
-  //   final generated = await docx.generate(c);
-  //   final dir = await getExternalStorageDirectory();
-  //   final path =
-  //       '${dir!.path}/scan_${DateTime.now().millisecondsSinceEpoch}.docx';
-  //   final file = File(path);
-  //   await file.writeAsBytes(generated!);
-  //
-  //   isSaving.value = false;
-  //   Get.snackbar('Saved', 'Word file saved at $path');
-  // }
 }
